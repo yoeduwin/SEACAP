@@ -9,8 +9,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
   <style>
     :root {
       --ea-green: #005600;
@@ -508,24 +506,156 @@
       padding: 6px;
     }
 
-    .chart-row {
+    .exec-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 16px;
-      margin-top: 18px;
+      margin-top: 16px;
     }
 
-    .chart-box {
+    .exec-card {
       border: 1px solid var(--ea-line);
       border-radius: 12px;
-      padding: 12px;
+      padding: 16px;
       background: #FFFFFF;
-      height: 260px;
     }
 
-    .chart-box.large {
-      height: 300px;
+    .exec-card.full {
       grid-column: span 2;
+    }
+
+    .exec-card-title {
+      font-size: 10px;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--ea-gray);
+      letter-spacing: 0.8px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--ea-line);
+    }
+
+    .gauge-wrap {
+      text-align: center;
+      padding: 4px 0 8px;
+    }
+
+    .score-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .score-row-label {
+      width: 80px;
+      font-size: 10px;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--ea-gray);
+      flex-shrink: 0;
+    }
+
+    .score-track {
+      flex: 1;
+      background: #EEF2EE;
+      border-radius: 4px;
+      height: 10px;
+      overflow: hidden;
+    }
+
+    .score-fill {
+      height: 100%;
+      border-radius: 4px;
+    }
+
+    .score-val {
+      width: 28px;
+      text-align: right;
+      font-size: 13px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    .rank-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 5px;
+    }
+
+    .rank-name {
+      width: 120px;
+      font-size: 9px;
+      color: var(--ea-dark);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex-shrink: 0;
+    }
+
+    .rank-track {
+      flex: 1;
+      background: #EEF2EE;
+      border-radius: 3px;
+      height: 7px;
+      overflow: hidden;
+    }
+
+    .rank-fill {
+      height: 100%;
+      border-radius: 3px;
+    }
+
+    .rank-val {
+      width: 38px;
+      text-align: right;
+      font-size: 10px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .dist-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .dist-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dist-label {
+      width: 110px;
+      font-size: 10px;
+      color: var(--ea-dark);
+      flex-shrink: 0;
+    }
+
+    .dist-track {
+      flex: 1;
+      background: #EEF2EE;
+      border-radius: 4px;
+      height: 10px;
+      overflow: hidden;
+    }
+
+    .dist-fill {
+      height: 100%;
+      border-radius: 4px;
+    }
+
+    .dist-val {
+      width: 50px;
+      text-align: right;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--ea-gray);
+      flex-shrink: 0;
     }
 
     .text-box {
@@ -625,9 +755,17 @@
   </style>
 </head>
 <body>
-  <header class="app-header">
-    <h1>Reporte Ejecutivo de Capacitación + Expediente Documental</h1>
-    <p>Generador local para integrar Excel DC-3, calificaciones, indicadores y anexos en un solo PDF.</p>
+  <header class="app-header" style="display:flex;align-items:center;gap:20px;">
+    <img id="appLogo"
+         src="https://raw.githubusercontent.com/yoeduwin/SEACAP/main/logo.png"
+         crossorigin="anonymous"
+         alt="Ejecutiva Ambiental"
+         style="height:54px;width:auto;object-fit:contain;"
+         onerror="this.style.display='none'" />
+    <div>
+      <h1>Reporte Ejecutivo de Capacitación + Expediente Documental</h1>
+      <p>Generador local para integrar Excel DC-3, calificaciones, indicadores y anexos en un solo PDF.</p>
+    </div>
   </header>
 
   <main class="container">
@@ -1097,7 +1235,12 @@
       $('reportPreview').innerHTML = `
         <section class="pdf-page cover">
           <div class="brand-block">
-            <div class="brand-mark"></div>
+            <img src="https://raw.githubusercontent.com/yoeduwin/SEACAP/main/logo.png"
+                 crossorigin="anonymous"
+                 alt="Ejecutiva Ambiental"
+                 style="height:46px;width:auto;object-fit:contain;"
+                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+            <div class="brand-mark" style="display:none;"></div>
             <div class="brand-text">Ejecutiva Ambiental</div>
           </div>
           <h1>Reporte Ejecutivo de Capacitación</h1>
@@ -1154,13 +1297,9 @@
         </section>
 
         <section class="pdf-page">
-          ${pageHeader('Gráficas de resultados', 'Visualización del desempeño grupal e individual')}
-          <div class="chart-row">
-            <div class="chart-box"><canvas id="avgChart"></canvas></div>
-            <div class="chart-box"><canvas id="statusChart"></canvas></div>
-            <div class="chart-box large"><canvas id="improvementChart"></canvas></div>
-          </div>
-          <div class="footer-note"><span>Gráficas</span><span>Reporte Ejecutivo de Capacitación</span></div>
+          ${pageHeader('Dashboard ejecutivo de resultados', 'Desempeño grupal e individual del proceso de capacitación')}
+          ${buildExecutiveDashboard(m)}
+          <div class="footer-note"><span>Dashboard ejecutivo</span><span>Reporte Ejecutivo de Capacitación</span></div>
         </section>
 
         <section class="pdf-page">
@@ -1231,57 +1370,127 @@
     }
 
     function renderCharts() {
-      Object.values(state.charts).forEach(chart => chart.destroy && chart.destroy());
-      state.charts = {};
-      const m = state.metrics;
-      const css = getComputedStyle(document.documentElement);
-      const green = css.getPropertyValue('--ea-green').trim();
-      const green2 = css.getPropertyValue('--ea-green-2').trim();
-      const dark = css.getPropertyValue('--ea-dark').trim();
-      const gray = '#9AA89A';
-
-      state.charts.avg = new Chart($('avgChart'), {
-        type: 'bar',
-        data: {
-          labels: ['Promedio inicial', 'Promedio final'],
-          datasets: [{ data: [m.avgInitial || 0, m.avgFinal || 0], backgroundColor: [gray, green] }]
-        },
-        options: chartBaseOptions('Promedio inicial vs final')
-      });
-
-      state.charts.status = new Chart($('statusChart'), {
-        type: 'doughnut',
-        data: {
-          labels: ['Aprobados', 'No aprobados', 'Sin dato'],
-          datasets: [{ data: [m.approved, m.failed, m.pending], backgroundColor: [green, '#A52323', '#B36B00'] }]
-        },
-        options: chartBaseOptions('Distribución de estatus')
-      });
-
-      state.charts.improvement = new Chart($('improvementChart'), {
-        type: 'bar',
-        data: {
-          labels: state.participants.map(p => `P${p.no}`),
-          datasets: [{ data: state.participants.map(p => p.mejora || 0), backgroundColor: green2 }]
-        },
-        options: {
-          ...chartBaseOptions('Mejora individual por participante'),
-          scales: { y: { beginAtZero: true }, x: { ticks: { color: dark } } }
-        }
-      });
+      /* No-op: visualizaciones son HTML/CSS generadas en buildExecutiveDashboard() */
     }
 
-    function chartBaseOptions(title) {
-      return {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: false,
-        plugins: {
-          legend: { display: true, position: 'bottom' },
-          title: { display: true, text: title, color: '#1C1C1C', font: { size: 13, weight: 'bold' } }
-        },
-        scales: undefined
-      };
+    function buildExecutiveDashboard(m) {
+      return `
+        <div class="exec-row">
+          <div class="exec-card">
+            <div class="exec-card-title">Tasa de aprobación</div>
+            <div class="gauge-wrap">${buildGaugeSvg(m.approvalRate || 0)}</div>
+            ${buildApprovalStats(m)}
+          </div>
+          <div class="exec-card">
+            <div class="exec-card-title">Comparativo de promedios</div>
+            ${buildScoreComparison(m.avgInitial, m.avgFinal, m.avgImprovement)}
+            <div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--ea-line);">
+              <div style="font-size:9px;text-transform:uppercase;font-weight:700;color:var(--ea-gray);margin-bottom:4px;">Nivel general</div>
+              <div style="font-size:15px;font-weight:800;color:${getLevelColor(m.generalLevel)};">${escapeHtml(m.generalLevel || '—')}</div>
+            </div>
+          </div>
+        </div>
+        <div class="exec-row" style="margin-top:12px;">
+          <div class="exec-card">
+            <div class="exec-card-title">Distribución de desempeño</div>
+            ${buildDistributionBars(m)}
+          </div>
+          <div class="exec-card">
+            <div class="exec-card-title">Ranking de mejora individual</div>
+            ${buildImprovementRanking(state.participants)}
+          </div>
+        </div>
+      `;
+    }
+
+    function buildGaugeSvg(percentage) {
+      const pct = Math.max(0, Math.min(100, percentage || 0));
+      const r = 82;
+      const arcLen = parseFloat((Math.PI * r).toFixed(2));
+      const offset = parseFloat((arcLen * (1 - pct / 100)).toFixed(2));
+      const color = pct >= 90 ? '#005600' : pct >= 70 ? '#007836' : pct >= 50 ? '#B36B00' : '#A52323';
+      return `<svg viewBox="0 0 200 108" style="width:160px;height:88px;display:block;margin:0 auto;">
+        <path d="M 18 100 A 82 82 0 0 1 182 100" stroke="#EEF2EE" stroke-width="14" fill="none" stroke-linecap="round"/>
+        <path d="M 18 100 A 82 82 0 0 1 182 100" stroke="${color}" stroke-width="14" fill="none" stroke-linecap="round"
+          stroke-dasharray="${arcLen}" stroke-dashoffset="${offset}"/>
+        <text x="100" y="80" text-anchor="middle" font-size="26" font-weight="800" fill="${color}" font-family="Arial,sans-serif">${pct.toFixed(1)}%</text>
+        <text x="100" y="96" text-anchor="middle" font-size="8" fill="#5B5B5B" font-family="Arial,sans-serif" letter-spacing="1">APROBACIÓN</text>
+      </svg>`;
+    }
+
+    function buildApprovalStats(m) {
+      const rows = [
+        ['Aprobados', m.approved, '#005600'],
+        ['No aprobados', m.failed, '#A52323'],
+        ['Sin dato', m.pending, '#B36B00']
+      ];
+      return rows.map(([label, val, color]) => `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:10px;color:var(--ea-gray);">${label}</span>
+          <span style="font-size:13px;font-weight:800;color:${color};">${val}</span>
+        </div>`).join('');
+    }
+
+    function buildScoreComparison(initial, final, improvement) {
+      const fmt = v => (v !== null && v !== undefined && Number.isFinite(v)) ? v.toFixed(1) : '—';
+      const barW = v => (v !== null && Number.isFinite(v)) ? `${Math.max(2, Math.min(100, v * 10))}%` : '2%';
+      return `
+        <div class="score-row">
+          <div class="score-row-label">Inicial</div>
+          <div class="score-track"><div class="score-fill" style="background:#9AA89A;width:${barW(initial)};"></div></div>
+          <div class="score-val" style="color:var(--ea-gray);">${fmt(initial)}</div>
+        </div>
+        <div class="score-row">
+          <div class="score-row-label" style="color:var(--ea-green);">Final</div>
+          <div class="score-track"><div class="score-fill" style="background:var(--ea-green);width:${barW(final)};"></div></div>
+          <div class="score-val" style="color:var(--ea-green);">${fmt(final)}</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:8px 10px;background:var(--ea-light);border-radius:8px;">
+          <span style="font-size:10px;font-weight:700;color:var(--ea-gray);text-transform:uppercase;">Mejora promedio</span>
+          <span style="font-size:16px;font-weight:800;color:${(improvement||0)>=0?'#005600':'#A52323'};">${(improvement!==null&&Number.isFinite(improvement))?(improvement>=0?'+':'')+improvement.toFixed(1)+' pts':'—'}</span>
+        </div>`;
+    }
+
+    function buildDistributionBars(m) {
+      const total = m.total || 1;
+      const rows = [
+        ['Aprobados', m.approved, '#005600'],
+        ['No aprobados', m.failed, '#A52323'],
+        ['Sin dato / Pendiente', m.pending, '#B36B00']
+      ];
+      return rows.map(([label, val, color]) => {
+        const pct = ((val / total) * 100).toFixed(1);
+        return `<div class="dist-row">
+          <div class="dist-dot" style="background:${color};"></div>
+          <div class="dist-label">${label}</div>
+          <div class="dist-track"><div class="dist-fill" style="background:${color};width:${pct}%;"></div></div>
+          <div class="dist-val">${val} <span style="font-weight:400;">(${pct}%)</span></div>
+        </div>`;
+      }).join('');
+    }
+
+    function buildImprovementRanking(participants) {
+      const withData = participants.filter(p => p.mejora !== null && Number.isFinite(p.mejora));
+      if (!withData.length) return '<p style="font-size:11px;color:var(--ea-gray);margin:0;">Sin datos de mejora capturados.</p>';
+      const maxAbs = Math.max(...withData.map(p => Math.abs(p.mejora)), 0.1);
+      const sorted = [...withData].sort((a, b) => b.mejora - a.mejora).slice(0, 22);
+      return sorted.map(p => {
+        const pct = (Math.abs(p.mejora) / maxAbs * 100).toFixed(1);
+        const color = p.mejora > 0 ? '#005600' : p.mejora < 0 ? '#A52323' : '#9AA89A';
+        const shortName = p.nombreCompleto.split(' ').slice(0, 3).join(' ');
+        const sign = p.mejora > 0 ? '+' : '';
+        return `<div class="rank-row">
+          <div class="rank-name" title="${escapeHtml(p.nombreCompleto)}">${escapeHtml(shortName)}</div>
+          <div class="rank-track"><div class="rank-fill" style="background:${color};width:${pct}%;"></div></div>
+          <div class="rank-val" style="color:${color};">${sign}${p.mejora.toFixed(1)}</div>
+        </div>`;
+      }).join('');
+    }
+
+    function getLevelColor(level) {
+      if (level === 'Excelente') return '#005600';
+      if (level === 'Satisfactorio') return '#007836';
+      return '#B36B00';
     }
 
     function buildExecutiveConclusion() {
@@ -1359,19 +1568,23 @@
 
         for (const section of annexDefinitions) {
           logAppend(`Integrando sección: ${section.title}`);
-          const separatorBytes = await renderSeparatorToPdfBytes(section.title);
-          const separatorPdf = await PDFLib.PDFDocument.load(separatorBytes);
-          const [separatorPage] = await finalPdf.copyPages(separatorPdf, [0]);
-          finalPdf.addPage(separatorPage);
+          try {
+            const separatorBytes = await renderSeparatorToPdfBytes(section.title);
+            const separatorPdf = await PDFLib.PDFDocument.load(separatorBytes);
+            const [separatorPage] = await finalPdf.copyPages(separatorPdf, [0]);
+            finalPdf.addPage(separatorPage);
+          } catch (err) {
+            logAppend(`  ⚠ Separador de "${section.title}" no pudo generarse: ${err.message}. Se continúa.`);
+          }
 
           const files = state.annexes[section.key] || [];
           if (!files.length) {
-            logAppend(`Sin archivos cargados para ${section.title}. Se conserva separador.`);
+            logAppend(`  Sin archivos para "${section.title}".`);
             continue;
           }
 
           for (const file of files) {
-            logAppend(`Agregando archivo: ${file.name}`);
+            logAppend(`  Agregando: ${file.name}`);
             await appendFileToPdf(finalPdf, file);
           }
         }
@@ -1389,6 +1602,14 @@
       }
     }
 
+    async function waitForImages(element) {
+      const imgs = Array.from(element.querySelectorAll('img'));
+      await Promise.all(imgs.map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(resolve => { img.onload = resolve; img.onerror = resolve; });
+      }));
+    }
+
     async function renderReportToPdfBytes() {
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF('p', 'pt', 'a4');
@@ -1396,8 +1617,29 @@
 
       for (let i = 0; i < pages.length; i++) {
         const page = pages[i];
-        const canvas = await html2canvas(page, { scale: 2, useCORS: true, backgroundColor: '#FFFFFF' });
-        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        let canvas;
+        try {
+          await waitForImages(page);
+          canvas = await html2canvas(page, {
+            scale: 1.5,
+            useCORS: true,
+            allowTaint: false,
+            backgroundColor: '#FFFFFF',
+            logging: false
+          });
+        } catch (err) {
+          logAppend(`  ⚠ Página ${i + 1} no pudo capturarse: ${err.message}. Se genera página en blanco.`);
+          canvas = document.createElement('canvas');
+          canvas.width = 794;
+          canvas.height = 1123;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, 794, 1123);
+          ctx.fillStyle = '#A52323';
+          ctx.font = '14px Arial';
+          ctx.fillText(`Error al capturar página ${i + 1}: ${err.message}`, 40, 80);
+        }
+        const imgData = canvas.toDataURL('image/jpeg', 0.88);
         if (i > 0) pdf.addPage();
         pdf.addImage(imgData, 'JPEG', 0, 0, 595.28, 841.89);
       }
@@ -1407,9 +1649,10 @@
     async function renderSeparatorToPdfBytes(title) {
       const { jsPDF } = window.jspdf;
       const temp = document.createElement('div');
-      temp.style.position = 'fixed';
-      temp.style.left = '-9999px';
-      temp.style.top = '0';
+      temp.style.position = 'absolute';
+      temp.style.top = '-10000px';
+      temp.style.left = '0';
+      temp.style.width = '794px';
       temp.innerHTML = `
         <div class="separator-page">
           <h2>${escapeHtml(title)}</h2>
@@ -1432,35 +1675,69 @@
       return pdf.output('arraybuffer');
     }
 
-    async function appendFileToPdf(finalPdf, file) {
-      const bytes = await file.arrayBuffer();
-      if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
-        const srcPdf = await PDFLib.PDFDocument.load(bytes, { ignoreEncryption: true });
-        const pages = await finalPdf.copyPages(srcPdf, srcPdf.getPageIndices());
-        pages.forEach(p => finalPdf.addPage(p));
-        return;
-      }
+    async function resizeImageIfNeeded(file, maxPx = 2400) {
+      return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          if (img.naturalWidth <= maxPx && img.naturalHeight <= maxPx) {
+            resolve(file);
+            return;
+          }
+          const scale = Math.min(maxPx / img.naturalWidth, maxPx / img.naturalHeight);
+          const w = Math.round(img.naturalWidth * scale);
+          const h = Math.round(img.naturalHeight * scale);
+          const cv = document.createElement('canvas');
+          cv.width = w;
+          cv.height = h;
+          cv.getContext('2d').drawImage(img, 0, 0, w, h);
+          cv.toBlob(blob => resolve(new File([blob], file.name, { type: 'image/jpeg' })), 'image/jpeg', 0.88);
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+        img.src = url;
+      });
+    }
 
-      if (file.type.startsWith('image/')) {
-        let image;
-        if (file.type === 'image/png' || file.name.toLowerCase().endsWith('.png')) {
-          image = await finalPdf.embedPng(bytes);
-        } else {
-          image = await finalPdf.embedJpg(bytes);
+    async function appendFileToPdf(finalPdf, file) {
+      try {
+        const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+        const isImage = file.type.startsWith('image/') || /\.(png|jpe?g|webp)$/i.test(file.name);
+
+        if (isPdf) {
+          const bytes = await file.arrayBuffer();
+          const srcPdf = await PDFLib.PDFDocument.load(bytes, { ignoreEncryption: true });
+          const pages = await finalPdf.copyPages(srcPdf, srcPdf.getPageIndices());
+          pages.forEach(p => finalPdf.addPage(p));
+          return;
         }
 
-        const page = finalPdf.addPage([612, 792]);
-        const margin = 36;
-        const maxW = 612 - margin * 2;
-        const maxH = 792 - margin * 2;
-        const scaled = image.scaleToFit(maxW, maxH);
-        const x = (612 - scaled.width) / 2;
-        const y = (792 - scaled.height) / 2;
-        page.drawImage(image, { x, y, width: scaled.width, height: scaled.height });
-        return;
-      }
+        if (isImage) {
+          const resized = await resizeImageIfNeeded(file, 2400);
+          const bytes = await resized.arrayBuffer();
+          let image;
+          const isPng = resized.type === 'image/png' || resized.name.toLowerCase().endsWith('.png');
+          if (isPng) {
+            image = await finalPdf.embedPng(bytes);
+          } else {
+            image = await finalPdf.embedJpg(bytes);
+          }
+          const page = finalPdf.addPage([612, 792]);
+          const margin = 36;
+          const scaled = image.scaleToFit(612 - margin * 2, 792 - margin * 2);
+          page.drawImage(image, {
+            x: (612 - scaled.width) / 2,
+            y: (792 - scaled.height) / 2,
+            width: scaled.width,
+            height: scaled.height
+          });
+          return;
+        }
 
-      throw new Error(`Formato no compatible: ${file.name}`);
+        logAppend(`  ⚠ Formato no compatible omitido: ${file.name}`);
+      } catch (err) {
+        logAppend(`  ✗ Error al procesar "${file.name}": ${err.message}. Se omite y continúa.`);
+      }
     }
 
     function logAppend(text) {
