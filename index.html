@@ -7,8 +7,6 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     :root {
       --ea-green: #005600;
@@ -1665,12 +1663,9 @@
 
       try {
         await wait(250);
-        logAppend('Generando páginas del reporte ejecutivo...');
+        logAppend('Generando páginas del reporte ejecutivo (vectorial)...');
         const finalPdf = await PDFLib.PDFDocument.create();
-        const reportPdfBytes = await renderReportToPdfBytes();
-        const reportPdf = await PDFLib.PDFDocument.load(reportPdfBytes);
-        const reportPages = await finalPdf.copyPages(reportPdf, reportPdf.getPageIndices());
-        reportPages.forEach(p => finalPdf.addPage(p));
+        await renderReportVectorial(finalPdf);
 
         for (const section of annexDefinitions) {
           logAppend(`Integrando sección: ${section.title}`);
@@ -1716,48 +1711,448 @@
       }
     }
 
-    async function waitForImages(element) {
-      const imgs = Array.from(element.querySelectorAll('img'));
-      await Promise.all(imgs.map(img => {
-        if (img.complete) return Promise.resolve();
-        return new Promise(resolve => { img.onload = resolve; img.onerror = resolve; });
-      }));
+    function wrapText(text, font, size, maxW) {
+      const words = String(text || '—').split(' ');
+      const lines = [];
+      let line = '';
+      for (const w of words) {
+        const test = line ? `${line} ${w}` : w;
+        if (font.widthOfTextAtSize(test, size) > maxW && line) {
+          lines.push(line);
+          line = w;
+        } else {
+          line = test;
+        }
+      }
+      if (line) lines.push(line);
+      return lines.length ? lines : ['—'];
     }
 
-    async function renderReportToPdfBytes() {
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF('p', 'pt', 'a4');
-      const pages = Array.from(document.querySelectorAll('#reportPreview .pdf-page'));
+    async function renderReportVectorial(finalPdf) {
+      const W = 595.28, H = 841.89;
+      const ML = 28, MR = 28;
+      const CW = W - ML - MR; // 539.28
 
-      for (let i = 0; i < pages.length; i++) {
-        const page = pages[i];
-        let canvas;
-        try {
-          await waitForImages(page);
-          canvas = await html2canvas(page, {
-            scale: 3,
-            useCORS: true,
-            allowTaint: false,
-            backgroundColor: '#FFFFFF',
-            logging: false
-          });
-        } catch (err) {
-          logAppend(`  ⚠ Página ${i + 1} no pudo capturarse: ${err.message}. Se genera página en blanco.`);
-          canvas = document.createElement('canvas');
-          canvas.width = 794;
-          canvas.height = 1123;
-          const ctx = canvas.getContext('2d');
-          ctx.fillStyle = '#FFFFFF';
-          ctx.fillRect(0, 0, 794, 1123);
-          ctx.fillStyle = '#A52323';
-          ctx.font = '14px Arial';
-          ctx.fillText(`Error al capturar página ${i + 1}: ${err.message}`, 40, 80);
+      const fontBold = await finalPdf.embedFont(PDFLib.StandardFonts.HelveticaBold);
+      const fontReg  = await finalPdf.embedFont(PDFLib.StandardFonts.Helvetica);
+
+      const C = {
+        green:  PDFLib.rgb(0,     0.337, 0    ),
+        green2: PDFLib.rgb(0,     0.471, 0.212),
+        greenH: PDFLib.rgb(0.878, 0.945, 0.878),
+        lightG: PDFLib.rgb(0.957, 0.984, 0.957),
+        white:  PDFLib.rgb(1,     1,     1    ),
+        dark:   PDFLib.rgb(0.11,  0.11,  0.11 ),
+        gray:   PDFLib.rgb(0.36,  0.36,  0.36 ),
+        warn:   PDFLib.rgb(0.7,   0.42,  0    ),
+        danger: PDFLib.rgb(0.647, 0.137, 0.137),
+        grayMid:PDFLib.rgb(0.6,   0.66,  0.6  ),
+        line:   PDFLib.rgb(0.85,  0.90,  0.85 ),
+      };
+
+      const c  = state.course || {};
+      const m  = state.metrics || calculateMetrics();
+      const reportDate = $('reportDateInput').value || formatDateHuman(new Date());
+      const preparedBy = $('preparedByInput').value || 'Ejecutiva Ambiental';
+      const HEAD_H   = 28;
+      const FOOT_ZONE = 32;
+
+      function addHeader(page, title, subtitle) {
+        page.drawRectangle({ x: 0, y: H - HEAD_H, width: W, height: HEAD_H, color: C.green });
+        page.drawText(title, { x: ML, y: H - HEAD_H + 9, size: 9.5, font: fontBold, color: C.white });
+        const bw = fontBold.widthOfTextAtSize('Ejecutiva Ambiental', 8);
+        page.drawText('Ejecutiva Ambiental', { x: W - bw - 14, y: H - HEAD_H + 9, size: 8, font: fontBold, color: C.white });
+        if (subtitle) {
+          page.drawText(subtitle, { x: ML, y: H - HEAD_H - 14, size: 7.5, font: fontReg, color: C.gray });
+          return H - HEAD_H - 28;
         }
-        const imgData = canvas.toDataURL('image/png');
-        if (i > 0) pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, 0, 595.28, 841.89);
+        return H - HEAD_H - 12;
       }
-      return pdf.output('arraybuffer');
+
+      function addFooter(page, leftText) {
+        page.drawRectangle({ x: 0, y: 0, width: W, height: 6, color: C.green });
+        page.drawText(leftText || '', { x: ML, y: 11, size: 7.5, font: fontReg, color: C.gray });
+        const rw = fontReg.widthOfTextAtSize('Ejecutiva Ambiental', 7.5);
+        page.drawText('Ejecutiva Ambiental', { x: W - rw - MR, y: 11, size: 7.5, font: fontReg, color: C.gray });
+      }
+
+      function secTitle(page, y, text) {
+        page.drawRectangle({ x: ML, y: y - 14, width: 3.5, height: 16, color: C.green });
+        page.drawText(text, { x: ML + 9, y: y - 12, size: 11, font: fontBold, color: C.green });
+        return y - 24;
+      }
+
+      function infoTable(page, rows, x, y, w) {
+        const labelW = 185;
+        const valX   = x + labelW;
+        const valW   = w - labelW - 8;
+        rows.forEach(([label, value], i) => {
+          const vLines = wrapText(String(value ?? '—'), fontReg, 9, valW);
+          const rowH   = Math.max(22, vLines.length * 12 + 10);
+          const bg     = i % 2 === 0 ? C.lightG : C.white;
+          page.drawRectangle({ x, y: y - rowH, width: w, height: rowH, color: bg, borderColor: C.line, borderWidth: 0.5 });
+          page.drawRectangle({ x: valX, y: y - rowH, width: 0.5, height: rowH, color: C.line });
+          page.drawText(String(label), { x: x + 8, y: y - rowH / 2 - 3.5, size: 9, font: fontBold, color: C.dark });
+          vLines.forEach((vl, vi) => {
+            page.drawText(vl, { x: valX + 6, y: y - 12 - vi * 12, size: 9, font: fontReg, color: C.dark });
+          });
+          y -= rowH;
+        });
+        return y;
+      }
+
+      function progBar(page, x, y, w, h, pct, col) {
+        page.drawRectangle({ x, y, width: w, height: h, color: PDFLib.rgb(0.9, 0.93, 0.9) });
+        const fw = Math.max(0, Math.min(w, w * Math.max(0, Math.min(100, pct)) / 100));
+        if (fw > 0) page.drawRectangle({ x, y, width: fw, height: h, color: col });
+      }
+
+      // ── PAGE 1: PORTADA ─────────────────────────────────────────────────
+      {
+        const page = finalPdf.addPage([W, H]);
+        page.drawRectangle({ x: 0, y: H - 18, width: W, height: 18, color: C.green });
+        page.drawText('Ejecutiva Ambiental', { x: ML, y: H - 54, size: 20, font: fontBold, color: C.green });
+        page.drawText('Sistema de Gestión de Capacitación', { x: ML, y: H - 70, size: 9, font: fontReg, color: C.gray });
+        page.drawRectangle({ x: ML, y: H - 80, width: CW, height: 1.5, color: C.green2 });
+
+        let cy = H - 112;
+        const h1 = wrapText('Reporte Ejecutivo de Capacitación', fontBold, 26, CW);
+        h1.forEach((line, i) => {
+          page.drawText(line, { x: ML, y: cy - i * 34, size: 26, font: fontBold, color: C.dark });
+        });
+        cy -= h1.length * 34 + 10;
+        page.drawText('Expediente documental integrado', { x: ML, y: cy, size: 15, font: fontReg, color: C.green2 });
+        cy -= 44;
+
+        const coverColW = (CW - 14) / 2;
+        const coverItems = [
+          ['Cliente',           c.cliente           || '—'],
+          ['RFC',               c.rfc               || '—'],
+          ['Curso',             c.curso             || '—'],
+          ['Duración',          formatDuration(c.duracion)],
+          ['Periodo',           `${c.fechaInicio || '—'} al ${c.fechaFinal || '—'}`],
+          ['Participantes',     String(m.total)],
+          ['Fecha del reporte', reportDate],
+          ['Elaboró',           preparedBy],
+        ];
+        for (let r = 0; r < 4; r++) {
+          const itemH = 52;
+          for (let col = 0; col < 2; col++) {
+            const item = coverItems[r * 2 + col];
+            if (!item) continue;
+            const [lbl, val] = item;
+            const bx = ML + col * (coverColW + 14);
+            const by = cy - itemH;
+            page.drawRectangle({ x: bx, y: by, width: coverColW, height: itemH, color: C.lightG, borderColor: C.line, borderWidth: 0.5 });
+            page.drawRectangle({ x: bx, y: by, width: 3.5, height: itemH, color: C.green });
+            page.drawText(lbl, { x: bx + 10, y: by + itemH - 16, size: 8.5, font: fontBold, color: C.gray });
+            const valLines = wrapText(String(val), fontBold, 11, coverColW - 18);
+            valLines.slice(0, 2).forEach((vl, vi) => {
+              page.drawText(vl, { x: bx + 10, y: by + itemH - 30 - vi * 14, size: 11, font: fontBold, color: C.dark });
+            });
+          }
+          cy -= 58;
+        }
+        addFooter(page, 'Reporte Ejecutivo de Capacitación');
+      }
+
+      // ── PAGE 2: DATOS GENERALES ──────────────────────────────────────────
+      {
+        const page = finalPdf.addPage([W, H]);
+        let cy = addHeader(page, 'Datos generales del curso', 'Información extraída del Excel base DC-3');
+        cy -= 10;
+        cy = secTitle(page, cy, 'Datos del curso');
+        cy -= 4;
+        cy = infoTable(page, [
+          ['Nombre del curso',   c.curso          || '—'],
+          ['Duración',           formatDuration(c.duracion)],
+          ['Fecha de inicio',    c.fechaInicio    || '—'],
+          ['Fecha final',        c.fechaFinal     || '—'],
+          ['Área temática',      c.areaTematica   || '—'],
+          ['Agente capacitador', c.agente         || '—'],
+          ['Registro STPS',      c.registroSTPS   || '—'],
+        ], ML, cy, CW);
+        cy -= 18;
+        cy = secTitle(page, cy, 'Datos del cliente');
+        cy -= 4;
+        cy = infoTable(page, [
+          ['Nombre o razón social',        c.cliente                   || '—'],
+          ['RFC',                          c.rfc                       || '—'],
+          ['Patrón o representante legal', c.patron                    || '—'],
+          ['Rep. de los trabajadores',     c.representanteTrabajadores || '—'],
+          ['Número de participantes',      String(m.total)],
+        ], ML, cy, CW);
+        addFooter(page, 'Datos generales');
+      }
+
+      // ── PAGE 3: INDICADORES EJECUTIVOS ───────────────────────────────────
+      {
+        const page = finalPdf.addPage([W, H]);
+        let cy = addHeader(page, 'Indicadores ejecutivos', 'Resultados calculados a partir de las calificaciones capturadas');
+        cy -= 10;
+
+        const kpiColW = (CW - 10) / 2;
+        const kpiH    = 70;
+        const kpiData = [
+          ['Participantes',    String(m.total),               `${m.completed} con evaluación completa`],
+          ['Promedio inicial', formatNumber(m.avgInitial),     'Escala 0 a 10'],
+          ['Promedio final',   formatNumber(m.avgFinal),       'Escala 0 a 10'],
+          ['Mejora promedio',  formatNumber(m.avgImprovement), 'Puntos de diferencia'],
+          ['Aprobación',       formatPercent(m.approvalRate),  `${m.approved} aprobados`],
+          ['No aprobados',     String(m.failed),               'Requieren seguimiento'],
+          ['Sin dato',         String(m.pending),              'Evaluación incompleta'],
+          ['Nivel general',    m.generalLevel,                 'Clasificación automática'],
+        ];
+        for (let r = 0; r < 4; r++) {
+          for (let col = 0; col < 2; col++) {
+            const kpi = kpiData[r * 2 + col];
+            if (!kpi) continue;
+            const [label, value, sub] = kpi;
+            const bx = ML + col * (kpiColW + 10);
+            const by = cy - kpiH;
+            page.drawRectangle({ x: bx, y: by, width: kpiColW, height: kpiH, color: C.lightG, borderColor: C.line, borderWidth: 0.8 });
+            page.drawRectangle({ x: bx, y: by + kpiH - 18, width: kpiColW, height: 18, color: C.greenH });
+            page.drawText(label, { x: bx + 8, y: by + kpiH - 13, size: 8, font: fontBold, color: C.green });
+            const valSize = String(value).length > 8 ? 16 : 22;
+            page.drawText(String(value), { x: bx + 8, y: by + kpiH - 44, size: valSize, font: fontBold, color: C.dark });
+            const subLines = wrapText(sub, fontReg, 7.5, kpiColW - 16);
+            subLines.slice(0, 2).forEach((sl, si) => {
+              page.drawText(sl, { x: bx + 8, y: by + 14 - si * 10, size: 7.5, font: fontReg, color: C.gray });
+            });
+          }
+          cy -= kpiH + 8;
+        }
+        cy -= 10;
+
+        cy = secTitle(page, cy, 'Conclusión ejecutiva');
+        cy -= 4;
+        const cLines = wrapText(buildExecutiveConclusion(), fontReg, 9.5, CW);
+        cLines.forEach((line, i) => {
+          page.drawText(line, { x: ML, y: cy - i * 13, size: 9.5, font: fontReg, color: C.dark });
+        });
+        cy -= cLines.length * 13 + 14;
+
+        cy = secTitle(page, cy, 'Recomendaciones automáticas');
+        cy -= 6;
+        buildRecommendations().forEach(rec => {
+          const recLines = wrapText(`• ${rec}`, fontReg, 9, CW - 8);
+          recLines.forEach((line, li) => {
+            page.drawText(line, { x: ML + (li > 0 ? 14 : 0), y: cy - li * 12, size: 9, font: fontReg, color: C.dark });
+          });
+          cy -= recLines.length * 12 + 6;
+        });
+        addFooter(page, 'Indicadores ejecutivos');
+      }
+
+      // ── PAGE 4: DASHBOARD ────────────────────────────────────────────────
+      {
+        const page = finalPdf.addPage([W, H]);
+        let cy = addHeader(page, 'Dashboard ejecutivo de resultados', 'Desempeño grupal e individual del proceso de capacitación');
+        cy -= 10;
+
+        const halfW = (CW - 12) / 2;
+
+        // Panel izquierdo: tasa de aprobación
+        {
+          const bx  = ML;
+          const panH = 126;
+          const pct  = m.approvalRate || 0;
+          const pctColor = pct >= 90 ? C.green : pct >= 70 ? C.green2 : pct >= 50 ? C.warn : C.danger;
+          page.drawRectangle({ x: bx, y: cy - panH, width: halfW, height: panH, color: C.lightG, borderColor: C.line, borderWidth: 0.8 });
+          page.drawText('TASA DE APROBACIÓN', { x: bx + 8, y: cy - 14, size: 7.5, font: fontBold, color: C.gray });
+          const pctText = `${pct.toFixed(1)}%`;
+          const pctW    = fontBold.widthOfTextAtSize(pctText, 30);
+          page.drawText(pctText, { x: bx + (halfW - pctW) / 2, y: cy - 56, size: 30, font: fontBold, color: pctColor });
+          progBar(page, bx + 10, cy - 68, halfW - 20, 8, pct, pctColor);
+          const stW = (halfW - 20) / 3;
+          [['Aprobados', String(m.approved), C.green], ['No aprobados', String(m.failed), C.danger], ['Sin dato', String(m.pending), C.warn]]
+            .forEach(([lbl, val, col], i) => {
+              const sx = bx + 10 + i * stW;
+              page.drawText(lbl, { x: sx, y: cy - 88, size: 6.5, font: fontReg, color: C.gray });
+              page.drawText(val,  { x: sx, y: cy - 101, size: 13, font: fontBold, color: col });
+            });
+        }
+
+        // Panel derecho: comparativo de promedios
+        {
+          const bx  = ML + halfW + 12;
+          const panH = 126;
+          const barW = halfW - 50;
+          const init = m.avgInitial, fin = m.avgFinal, imp = m.avgImprovement;
+          page.drawRectangle({ x: bx, y: cy - panH, width: halfW, height: panH, color: C.lightG, borderColor: C.line, borderWidth: 0.8 });
+          page.drawText('COMPARATIVO DE PROMEDIOS', { x: bx + 8, y: cy - 14, size: 7.5, font: fontBold, color: C.gray });
+          page.drawText('Inicial', { x: bx + 8, y: cy - 38, size: 8.5, font: fontBold, color: C.gray });
+          progBar(page, bx + 8, cy - 52, barW, 8, init !== null ? init * 10 : 0, C.grayMid);
+          page.drawText(formatNumber(init), { x: bx + 8 + barW + 4, y: cy - 46, size: 9, font: fontBold, color: C.gray });
+          page.drawText('Final', { x: bx + 8, y: cy - 68, size: 8.5, font: fontBold, color: C.green });
+          progBar(page, bx + 8, cy - 82, barW, 8, fin !== null ? fin * 10 : 0, C.green);
+          page.drawText(formatNumber(fin), { x: bx + 8 + barW + 4, y: cy - 76, size: 9, font: fontBold, color: C.green });
+          const impColor = (imp || 0) >= 0 ? C.green : C.danger;
+          const impText  = (imp !== null && Number.isFinite(imp)) ? `${imp >= 0 ? '+' : ''}${imp.toFixed(1)} pts` : '—';
+          page.drawRectangle({ x: bx + 8, y: cy - 122, width: halfW - 16, height: 30, color: C.greenH, borderColor: C.line, borderWidth: 0.5 });
+          page.drawText('Mejora promedio', { x: bx + 14, y: cy - 103, size: 7.5, font: fontReg, color: C.gray });
+          page.drawText(impText,           { x: bx + 14, y: cy - 116, size: 11,  font: fontBold, color: impColor });
+        }
+        cy -= 136;
+
+        // Panel izquierdo: distribución
+        {
+          const bx = ML;
+          page.drawText('DISTRIBUCIÓN DE DESEMPEÑO', { x: bx + 8, y: cy - 14, size: 7.5, font: fontBold, color: C.gray });
+          let dy = cy - 28;
+          [
+            ['Aprobados',            m.approved, m.total, C.green],
+            ['No aprobados',         m.failed,   m.total, C.danger],
+            ['Sin dato / Pendiente', m.pending,  m.total, C.warn],
+          ].forEach(([lbl, val, tot, col]) => {
+            const pct  = tot > 0 ? (val / tot) * 100 : 0;
+            const barW = halfW - 90;
+            page.drawRectangle({ x: bx + 8, y: dy - 5, width: 7, height: 7, color: col });
+            page.drawText(lbl, { x: bx + 20, y: dy, size: 8, font: fontReg, color: C.dark });
+            progBar(page, bx + 20, dy - 14, barW, 7, pct, col);
+            page.drawText(`${val}  (${pct.toFixed(0)}%)`, { x: bx + 20 + barW + 4, y: dy, size: 8, font: fontBold, color: col });
+            dy -= 28;
+          });
+        }
+
+        // Panel derecho: ranking de mejora
+        {
+          const bx      = ML + halfW + 12;
+          const nameW   = 115;
+          const rankBarW = halfW - nameW - 34;
+          page.drawText('RANKING DE MEJORA INDIVIDUAL', { x: bx + 8, y: cy - 14, size: 7.5, font: fontBold, color: C.gray });
+          const withData = state.participants.filter(p => p.mejora !== null && Number.isFinite(p.mejora));
+          const maxAbs   = Math.max(...withData.map(p => Math.abs(p.mejora)), 0.1);
+          const sorted   = [...withData].sort((a, b) => b.mejora - a.mejora).slice(0, 20);
+          if (!sorted.length) {
+            page.drawText('Sin datos de mejora capturados.', { x: bx + 8, y: cy - 30, size: 8, font: fontReg, color: C.gray });
+          } else {
+            let ry = cy - 28;
+            for (const p of sorted) {
+              if (ry < FOOT_ZONE) break;
+              const pct   = (Math.abs(p.mejora) / maxAbs) * 100;
+              const col   = p.mejora > 0 ? C.green : p.mejora < 0 ? C.danger : C.grayMid;
+              const sign  = p.mejora >= 0 ? '+' : '';
+              const full  = p.nombreCompleto.split(' ').slice(0, 3).join(' ');
+              let nTxt    = full;
+              while (fontReg.widthOfTextAtSize(nTxt, 7.5) > nameW - 2 && nTxt.length > 3) nTxt = nTxt.slice(0, -1);
+              if (nTxt !== full) nTxt = nTxt.slice(0, -1) + '…';
+              page.drawText(nTxt, { x: bx + 8, y: ry, size: 7.5, font: fontReg, color: C.dark });
+              progBar(page, bx + 8 + nameW, ry - 10, rankBarW, 7, pct, col);
+              page.drawText(`${sign}${p.mejora.toFixed(1)}`, { x: bx + 8 + nameW + rankBarW + 2, y: ry, size: 7.5, font: fontBold, color: col });
+              ry -= 16;
+            }
+          }
+        }
+        addFooter(page, 'Dashboard ejecutivo');
+      }
+
+      // ── PÁGINAS 5+: TABLA DE PARTICIPANTES ──────────────────────────────
+      {
+        const COL_W = [22, 181, 90, 34, 34, 42, 34, 40, 62];
+        const COL_N = ['No.', 'Participante', 'Puesto', 'Ini.', 'Final', 'Satisf.', 'Mejor.', '% Mej.', 'Estatus'];
+        const ROW_H = 18, HEAD_R = 20, TFONT = 8;
+
+        let page = finalPdf.addPage([W, H]);
+        let cy = addHeader(page, 'Tabla de participantes y resultados', 'Nombre legible conforme a la hoja DATOS: A + B + C');
+        cy -= 8;
+
+        function drawTblHeader(pg, y) {
+          let x = ML;
+          COL_W.forEach((w, i) => {
+            pg.drawRectangle({ x, y: y - HEAD_R, width: w, height: HEAD_R, color: C.green });
+            pg.drawText(COL_N[i], { x: x + 2, y: y - HEAD_R + 6, size: 7, font: fontBold, color: C.white });
+            x += w;
+          });
+          return y - HEAD_R;
+        }
+
+        function drawTblRow(pg, y, cells, isAlt) {
+          pg.drawRectangle({ x: ML, y: y - ROW_H, width: CW, height: ROW_H,
+            color: isAlt ? C.lightG : C.white, borderColor: C.line, borderWidth: 0.3 });
+          let x = ML;
+          cells.forEach((cell, i) => {
+            let t = String(cell ?? '—');
+            const maxW = COL_W[i] - 4;
+            while (fontReg.widthOfTextAtSize(t, TFONT) > maxW && t.length > 1) t = t.slice(0, -1);
+            if (t !== String(cell ?? '—')) t = t.slice(0, -1) + '…';
+            pg.drawText(t, { x: x + 2, y: y - ROW_H + 5, size: TFONT, font: fontReg, color: C.dark });
+            x += COL_W[i];
+          });
+          return y - ROW_H;
+        }
+
+        cy = drawTblHeader(page, cy);
+        state.participants.forEach((p, idx) => {
+          if (cy - ROW_H < FOOT_ZONE) {
+            addFooter(page, 'Participantes');
+            page = finalPdf.addPage([W, H]);
+            cy   = addHeader(page, 'Participantes (continuación)', '');
+            cy  -= 6;
+            cy   = drawTblHeader(page, cy);
+          }
+          cy = drawTblRow(page, cy, [
+            p.no, p.nombreCompleto, p.puesto || '—',
+            formatNumber(parseGrade(p.inicial)), formatNumber(parseGrade(p.final)),
+            p.satisfaccion || '—', formatNumber(p.mejora),
+            formatPercent(p.porcentajeMejora), p.estatus,
+          ], idx % 2 === 1);
+        });
+
+        // Sección de observaciones
+        cy -= 16;
+        if (cy - 60 < FOOT_ZONE) {
+          addFooter(page, 'Participantes');
+          page = finalPdf.addPage([W, H]);
+          cy   = addHeader(page, 'Observaciones por participante', '');
+          cy  -= 10;
+        }
+        cy = secTitle(page, cy, 'Observaciones por participante');
+        cy -= 4;
+
+        const OBS_W = [22, 140, CW - 162];
+        const OBS_N = ['No.', 'Participante', 'Observación automática'];
+
+        function drawObsHeader(pg, y) {
+          let x = ML;
+          OBS_W.forEach((w, i) => {
+            pg.drawRectangle({ x, y: y - HEAD_R, width: w, height: HEAD_R, color: C.green2 });
+            pg.drawText(OBS_N[i], { x: x + 3, y: y - HEAD_R + 6, size: 7, font: fontBold, color: C.white });
+            x += w;
+          });
+          return y - HEAD_R;
+        }
+
+        cy = drawObsHeader(page, cy);
+        state.participants.forEach((p, idx) => {
+          const obsLines = wrapText(p.observacion || '—', fontReg, 8, OBS_W[2] - 8);
+          const rowH2    = Math.max(ROW_H, obsLines.length * 11 + 8);
+          if (cy - rowH2 < FOOT_ZONE) {
+            addFooter(page, 'Observaciones');
+            page = finalPdf.addPage([W, H]);
+            cy   = addHeader(page, 'Observaciones (continuación)', '');
+            cy  -= 6;
+            cy   = drawObsHeader(page, cy);
+          }
+          const bg = idx % 2 === 0 ? C.lightG : C.white;
+          page.drawRectangle({ x: ML, y: cy - rowH2, width: CW, height: rowH2, color: bg, borderColor: C.line, borderWidth: 0.3 });
+          let dx = ML;
+          OBS_W.forEach((w, i) => {
+            if (i < OBS_W.length - 1) page.drawRectangle({ x: dx + w, y: cy - rowH2, width: 0.5, height: rowH2, color: C.line });
+            dx += w;
+          });
+          page.drawText(String(p.no), { x: ML + 4, y: cy - rowH2 / 2 - 3.5, size: 8, font: fontReg, color: C.dark });
+          let nTxt = p.nombreCompleto;
+          while (fontReg.widthOfTextAtSize(nTxt, 8) > OBS_W[1] - 8 && nTxt.length > 3) nTxt = nTxt.slice(0, -1);
+          if (nTxt !== p.nombreCompleto) nTxt = nTxt.slice(0, -1) + '…';
+          page.drawText(nTxt, { x: ML + OBS_W[0] + 4, y: cy - rowH2 / 2 - 3.5, size: 8, font: fontReg, color: C.dark });
+          obsLines.forEach((ol, oi) => {
+            page.drawText(ol, { x: ML + OBS_W[0] + OBS_W[1] + 4, y: cy - 12 - oi * 11, size: 8, font: fontReg, color: C.dark });
+          });
+          cy -= rowH2;
+        });
+        addFooter(page, 'Participantes');
+      }
     }
 
     async function renderSeparatorToPdfBytes(title) {
@@ -1774,23 +2169,6 @@
       const dark   = PDFLib.rgb(0.11,   0.11,  0.11  );
       const gray   = PDFLib.rgb(0.36,   0.36,  0.36  );
       const lightG = PDFLib.rgb(0.957,  0.984, 0.957 );
-
-      function wrapText(text, font, size, maxW) {
-        const words = (text || '—').split(' ');
-        const lines = [];
-        let line = '';
-        for (const w of words) {
-          const test = line ? `${line} ${w}` : w;
-          if (font.widthOfTextAtSize(test, size) > maxW && line) {
-            lines.push(line);
-            line = w;
-          } else {
-            line = test;
-          }
-        }
-        if (line) lines.push(line);
-        return lines.length ? lines : ['—'];
-      }
 
       /* ── BANDA VERDE SUPERIOR ─────────────────────────────── */
       const bandH = 155;
