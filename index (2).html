@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reporte Ejecutivo de Capacitación + Expediente Documental</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root {
+      --ea-green: #005600;
+      --ea-green-2: #007836;
+      --ea-dark: #1C1C1C;
+      --ea-gray: #5B5B5B;
+      --ea-light: #F4F6F4;
+      --ea-line: #D9E2D9;
+      --ea-white: #FFFFFF;
+      --ea-warning: #B36B00;
+      --ea-danger: #A52323;
+      --ea-success: #005600;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #EEF2EE;
+      color: var(--ea-dark);
+    }
+
+    .app-header {
+      background: linear-gradient(135deg, var(--ea-green), var(--ea-green-2));
+      color: white;
+      padding: 26px 32px;
+      border-bottom: 5px solid #0A3D0A;
+    }
+
+    .app-header h1 {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: 0.3px;
+      font-weight: 700;
+    }
+
+    .app-header p {
+      margin: 8px 0 0;
+      font-size: 14px;
+      opacity: 0.92;
+    }
+
+    .container {
+      max-width: 1260px;
+      margin: 26px auto 60px;
+      padding: 0 20px;
+    }
+
+    .panel {
+      background: white;
+      border: 1px solid var(--ea-line);
+      border-radius: 14px;
+      box-shadow: 0 10px 28px rgba(0,0,0,0.06);
+      margin-bottom: 22px;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--ea-line);
+      background: #FBFCFB;
+    }
+
+    .panel-header h2 {
+      margin: 0;
+      color: var(--ea-green);
+      font-size: 18px;
+    }
+
+    .panel-header p {
+      margin: 6px 0 0;
+      color: var(--ea-gray);
+      font-size: 13px;
+    }
+
+    .panel-body {
+      padding: 22px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .grid-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    @media (max-width: 900px) {
+      .grid-2, .grid-3, .grid-4 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--ea-gray);
+      margin-bottom: 6px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    input[type="file"], input[type="number"], input[type="text"] {
+      width: 100%;
+      border: 1px solid #C9D5C9;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 14px;
+      background: white;
+    }
+
+    input[type="number"] {
+      text-align: center;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    button {
+      border: none;
+      border-radius: 9px;
+      padding: 11px 16px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    button.primary {
+      background: linear-gradient(135deg, var(--ea-green), var(--ea-green-2));
+      color: white;
+    }
+
+    button.secondary {
+      background: #E8EFE8;
+      color: var(--ea-green);
+      border: 1px solid #C7D8C7;
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+    }
+
+    .notice {
+      border-left: 5px solid var(--ea-green);
+      background: #F2F8F2;
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #274927;
+      margin-bottom: 16px;
+    }
+
+    .error {
+      border-left-color: var(--ea-danger);
+      background: #FFF4F4;
+      color: #722222;
+    }
+
+    .summary-card {
+      border: 1px solid var(--ea-line);
+      border-radius: 12px;
+      padding: 14px;
+      background: #FBFCFB;
+    }
+
+    .summary-card .label {
+      font-size: 11px;
+      color: var(--ea-gray);
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    .summary-card .value {
+      font-size: 15px;
+      color: var(--ea-dark);
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th {
+      background: var(--ea-green);
+      color: white;
+      padding: 9px 8px;
+      text-align: left;
+      font-size: 12px;
+      border: 1px solid var(--ea-green);
+    }
+
+    td {
+      border: 1px solid #DCE5DC;
+      padding: 8px;
+      vertical-align: top;
+    }
+
+    tr:nth-child(even) td {
+      background: #FAFCFA;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 10px;
+      border: 1px solid var(--ea-line);
+    }
+
+    .status {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .status.ok {
+      background: #E5F2E5;
+      color: var(--ea-success);
+    }
+
+    .status.fail {
+      background: #F8E6E6;
+      color: var(--ea-danger);
+    }
+
+    .status.pending {
+      background: #FFF4D9;
+      color: var(--ea-warning);
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 18px 0;
+    }
+
+    @media (max-width: 900px) {
+      .kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    .kpi {
+      border: 1px solid #D8E4D8;
+      border-radius: 12px;
+      background: #FFFFFF;
+      padding: 14px;
+      min-height: 86px;
+    }
+
+    .kpi .kpi-label {
+      font-size: 11px;
+      color: var(--ea-gray);
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .kpi .kpi-value {
+      font-size: 25px;
+      color: var(--ea-green);
+      font-weight: 800;
+    }
+
+    .kpi .kpi-sub {
+      font-size: 11px;
+      color: var(--ea-gray);
+      margin-top: 4px;
+    }
+
+    .annex-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    @media (max-width: 900px) {
+      .annex-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .annex-card {
+      border: 1px solid var(--ea-line);
+      border-radius: 12px;
+      padding: 14px;
+      background: #FBFCFB;
+    }
+
+    .annex-card h3 {
+      margin: 0 0 10px;
+      font-size: 15px;
+      color: var(--ea-green);
+    }
+
+    .file-list {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--ea-gray);
+      line-height: 1.5;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Vista previa / contenido imprimible */
+    #reportPreviewWrapper {
+      background: #DDE5DD;
+      padding: 22px;
+      overflow-x: auto;
+    }
+
+    #reportPreview {
+      width: 794px;
+      margin: 0 auto;
+      background: white;
+      color: var(--ea-dark);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.16);
+    }
+
+    .pdf-page {
+      width: 794px;
+      min-height: 1123px;
+      padding: 48px 52px;
+      background: white;
+      position: relative;
+      page-break-after: always;
+      overflow: hidden;
+    }
+
+    .pdf-page.compact {
+      min-height: auto;
+      page-break-after: auto;
+    }
+
+    .cover {
+      background: linear-gradient(145deg, #FFFFFF 0%, #F4F8F4 60%, #E8F2E8 100%);
+      border-top: 16px solid var(--ea-green);
+    }
+
+    .cover::after {
+      content: "";
+      position: absolute;
+      right: -110px;
+      bottom: -110px;
+      width: 310px;
+      height: 310px;
+      border-radius: 50%;
+      border: 36px solid rgba(0,86,0,0.08);
+    }
+
+    .brand-block {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 70px;
+    }
+
+    .brand-mark {
+      width: 46px;
+      height: 46px;
+      background: linear-gradient(135deg, var(--ea-green), var(--ea-green-2));
+      border-radius: 10px;
+    }
+
+    .brand-text {
+      font-size: 19px;
+      color: var(--ea-green);
+      font-weight: 800;
+      letter-spacing: 0.2px;
+    }
+
+    .cover h1 {
+      font-size: 36px;
+      line-height: 1.12;
+      margin: 0 0 18px;
+      color: var(--ea-dark);
+      max-width: 570px;
+    }
+
+    .cover .subtitle {
+      font-size: 18px;
+      color: var(--ea-green);
+      font-weight: 700;
+      margin-bottom: 34px;
+    }
+
+    .cover-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      max-width: 620px;
+      margin-top: 40px;
+    }
+
+    .cover-info div {
+      border-left: 4px solid var(--ea-green);
+      background: rgba(255,255,255,0.72);
+      padding: 10px 12px;
+    }
+
+    .cover-info span {
+      display: block;
+      font-size: 10px;
+      color: var(--ea-gray);
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .cover-info strong {
+      display: block;
+      font-size: 13px;
+      color: var(--ea-dark);
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid var(--ea-green);
+      padding-bottom: 12px;
+      margin-bottom: 22px;
+    }
+
+    .page-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--ea-green);
+      margin: 0;
+    }
+
+    .page-subtitle {
+      font-size: 11px;
+      color: var(--ea-gray);
+      margin-top: 4px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      color: var(--ea-green);
+      margin: 22px 0 10px;
+      padding-left: 10px;
+      border-left: 4px solid var(--ea-green);
+    }
+
+    .info-table td:first-child {
+      width: 32%;
+      background: #F2F7F2;
+      color: var(--ea-green);
+      font-weight: 700;
+    }
+
+    .report-table {
+      font-size: 11px;
+    }
+
+    .report-table th {
+      font-size: 10px;
+      padding: 7px 6px;
+    }
+
+    .report-table td {
+      padding: 6px;
+    }
+
+    .chart-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .chart-box {
+      border: 1px solid var(--ea-line);
+      border-radius: 12px;
+      padding: 12px;
+      background: #FFFFFF;
+      height: 260px;
+    }
+
+    .chart-box.large {
+      height: 300px;
+      grid-column: span 2;
+    }
+
+    .text-box {
+      border: 1px solid var(--ea-line);
+      background: #FBFCFB;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 12.5px;
+      line-height: 1.6;
+      text-align: justify;
+    }
+
+    .recommendations {
+      margin: 8px 0 0;
+      padding-left: 18px;
+      font-size: 12.5px;
+      line-height: 1.55;
+    }
+
+    .footer-note {
+      position: absolute;
+      bottom: 28px;
+      left: 52px;
+      right: 52px;
+      border-top: 1px solid var(--ea-line);
+      padding-top: 8px;
+      font-size: 9px;
+      color: var(--ea-gray);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .separator-page {
+      width: 794px;
+      min-height: 1123px;
+      padding: 54px;
+      background: linear-gradient(145deg, var(--ea-green), var(--ea-green-2));
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+    }
+
+    .separator-page::before {
+      content: "";
+      position: absolute;
+      left: 54px;
+      top: 54px;
+      width: 90px;
+      height: 8px;
+      background: white;
+      opacity: 0.9;
+      border-radius: 999px;
+    }
+
+    .separator-page h2 {
+      font-size: 38px;
+      line-height: 1.1;
+      margin: 0 0 14px;
+      max-width: 580px;
+    }
+
+    .separator-page p {
+      font-size: 15px;
+      line-height: 1.5;
+      opacity: 0.92;
+      max-width: 560px;
+    }
+
+    .separator-meta {
+      margin-top: 42px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      font-size: 12px;
+    }
+
+    .separator-meta div {
+      border: 1px solid rgba(255,255,255,0.34);
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    .progress-log {
+      white-space: pre-wrap;
+      font-size: 12px;
+      line-height: 1.5;
+      background: #F7F9F7;
+      border: 1px solid var(--ea-line);
+      border-radius: 10px;
+      padding: 12px;
+      color: var(--ea-gray);
+      max-height: 220px;
+      overflow: auto;
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <h1>Reporte Ejecutivo de Capacitación + Expediente Documental</h1>
+    <p>Generador local para integrar Excel DC-3, calificaciones, indicadores y anexos en un solo PDF.</p>
+  </header>
+
+  <main class="container">
+    <section class="panel">
+      <div class="panel-header">
+        <h2>1. Cargar Excel base DC-3</h2>
+        <p>El archivo debe contener las hojas DATOS e INICIO. Las calificaciones no se leen del Excel; se capturan manualmente.</p>
+      </div>
+      <div class="panel-body">
+        <div id="excelNotice" class="notice">Cargue el Excel utilizado para la generación de DC-3. El sistema tomará la cantidad de participantes desde INICIO!I22.</div>
+        <label for="excelInput">Archivo Excel</label>
+        <input type="file" id="excelInput" accept=".xlsx,.xls,.xlsm" />
+        <div class="button-row">
+          <button class="primary" id="readExcelBtn">Leer Excel</button>
+          <button class="secondary" id="resetBtn">Reiniciar</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="summarySection" class="panel hidden">
+      <div class="panel-header">
+        <h2>2. Resumen detectado</h2>
+        <p>Verifique que la información detectada corresponda al curso y cliente correctos.</p>
+      </div>
+      <div class="panel-body">
+        <div class="grid grid-4" id="summaryGrid"></div>
+      </div>
+    </section>
+
+    <section id="gradesSection" class="panel hidden">
+      <div class="panel-header">
+        <h2>3. Captura manual de calificaciones</h2>
+        <p>Capture calificación inicial y final por participante. El criterio de aprobación puede ajustarse antes de generar el reporte.</p>
+      </div>
+      <div class="panel-body">
+        <div class="grid grid-3">
+          <div>
+            <label for="approvalInput">Criterio mínimo de aprobación</label>
+            <input type="number" id="approvalInput" min="0" max="10" step="0.1" value="8.0" />
+          </div>
+          <div>
+            <label for="preparedByInput">Elaboró</label>
+            <input type="text" id="preparedByInput" value="Ejecutiva Ambiental" />
+          </div>
+          <div>
+            <label for="reportDateInput">Fecha del reporte</label>
+            <input type="text" id="reportDateInput" />
+          </div>
+        </div>
+
+        <div class="kpi-grid" id="liveKpis"></div>
+
+        <div class="table-wrap">
+          <table id="gradesTable">
+            <thead>
+              <tr>
+                <th>No.</th>
+                <th>Nombre completo</th>
+                <th>Puesto</th>
+                <th>Calif. inicial</th>
+                <th>Calif. final</th>
+                <th>Mejora</th>
+                <th>% Mejora</th>
+                <th>Estatus</th>
+                <th>Observación automática</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="button-row">
+          <button class="primary" id="buildPreviewBtn">Generar vista previa del reporte</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="previewSection" class="panel hidden">
+      <div class="panel-header">
+        <h2>4. Vista previa del reporte ejecutivo</h2>
+        <p>Esta sección se colocará al inicio del PDF final.</p>
+      </div>
+      <div class="panel-body" id="reportPreviewWrapper">
+        <div id="reportPreview"></div>
+      </div>
+    </section>
+
+    <section id="annexSection" class="panel hidden">
+      <div class="panel-header">
+        <h2>5. Cargar anexos documentales</h2>
+        <p>Cada sección puede recibir múltiples PDF o imágenes. Si no se carga una sección, el PDF puede generarse de todos modos.</p>
+      </div>
+      <div class="panel-body">
+        <div class="annex-grid" id="annexGrid"></div>
+        <div class="button-row">
+          <button class="primary" id="generatePdfBtn">Generar PDF final</button>
+        </div>
+        <div id="progressLog" class="progress-log hidden"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const state = {
+      workbook: null,
+      course: null,
+      participants: [],
+      metrics: null,
+      charts: {},
+      annexes: {
+        asistencia: [],
+        examenesIniciales: [],
+        examenesFinales: [],
+        dc3: [],
+        evaluacion: [],
+        fotografica: []
+      }
+    };
+
+    const annexDefinitions = [
+      { key: 'asistencia', title: 'Lista de asistencia' },
+      { key: 'examenesIniciales', title: 'Exámenes iniciales' },
+      { key: 'examenesFinales', title: 'Exámenes finales' },
+      { key: 'dc3', title: 'Formatos DC-3' },
+      { key: 'evaluacion', title: 'Evaluación / Aceptación del curso' },
+      { key: 'fotografica', title: 'Evidencia fotográfica' }
+    ];
+
+    const $ = (id) => document.getElementById(id);
+
+    document.addEventListener('DOMContentLoaded', () => {
+      $('reportDateInput').value = formatDateHuman(new Date());
+      renderAnnexInputs();
+      bindEvents();
+      updateLiveMetrics();
+    });
+
+    function bindEvents() {
+      $('readExcelBtn').addEventListener('click', readExcelFile);
+      $('resetBtn').addEventListener('click', () => window.location.reload());
+      $('approvalInput').addEventListener('input', () => {
+        renderGradesTable();
+        updateLiveMetrics();
+      });
+      $('buildPreviewBtn').addEventListener('click', buildReportPreview);
+      $('generatePdfBtn').addEventListener('click', generateFinalPdf);
+    }
+
+    function showNotice(message, isError = false) {
+      const box = $('excelNotice');
+      box.textContent = message;
+      box.className = isError ? 'notice error' : 'notice';
+    }
+
+    async function readExcelFile() {
+      const file = $('excelInput').files[0];
+      if (!file) {
+        showNotice('Debe cargar un archivo Excel antes de continuar.', true);
+        return;
+      }
+
+      try {
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: 'array', cellDates: false });
+        state.workbook = workbook;
+
+        if (!workbook.SheetNames.includes('DATOS') || !workbook.SheetNames.includes('INICIO')) {
+          throw new Error('El Excel debe contener las hojas DATOS e INICIO.');
+        }
+
+        const datos = workbook.Sheets['DATOS'];
+        const inicio = workbook.Sheets['INICIO'];
+        const totalRaw = getCell(inicio, 'I22');
+        const totalParticipants = Number(totalRaw);
+
+        if (!Number.isFinite(totalParticipants) || totalParticipants <= 0) {
+          throw new Error('INICIO!I22 no contiene un número válido de participantes.');
+        }
+
+        const firstRow = 3;
+        const first = readDatosRow(datos, firstRow);
+        if (!first.nombre && !first.apellidoPaterno && !first.apellidoMaterno) {
+          throw new Error('No se encontraron participantes válidos a partir de la fila 3 de DATOS.');
+        }
+
+        state.course = {
+          cliente: first.empresa || '',
+          rfc: first.rfcEmpresa || '',
+          curso: first.curso || '',
+          duracion: first.duracion || '',
+          fechaInicio: buildDateText(first.anioInicio, first.mesInicio, first.diaInicio),
+          fechaFinal: buildDateText(first.anioFinal, first.mesFinal, first.diaFinal),
+          areaTematica: first.areaTematica || '',
+          agente: first.agente || '',
+          registroSTPS: first.registroSTPS || '',
+          patron: first.patron || '',
+          representanteTrabajadores: first.representanteTrabajadores || '',
+          totalParticipants
+        };
+
+        state.participants = [];
+        for (let i = 0; i < totalParticipants; i++) {
+          const rowNumber = firstRow + i;
+          const row = readDatosRow(datos, rowNumber);
+          const fullName = [row.nombre, row.apellidoPaterno, row.apellidoMaterno].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+          if (!fullName) continue;
+
+          state.participants.push({
+            no: state.participants.length + 1,
+            nombreCompleto: fullName,
+            nombreDC3: [row.apellidoPaterno, row.apellidoMaterno, row.nombre].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim(),
+            curp: row.curp || '',
+            ocupacion: row.ocupacion || '',
+            puesto: row.puesto || '',
+            inicial: '',
+            final: '',
+            mejora: null,
+            porcentajeMejora: null,
+            estatus: 'Sin dato',
+            observacion: 'Sin información completa para evaluación.'
+          });
+        }
+
+        if (state.participants.length === 0) {
+          throw new Error('No se encontraron participantes válidos en DATOS.');
+        }
+
+        renderSummary();
+        renderGradesTable();
+        updateLiveMetrics();
+
+        $('summarySection').classList.remove('hidden');
+        $('gradesSection').classList.remove('hidden');
+        showNotice(`Excel leído correctamente. Participantes detectados: ${state.participants.length}.`);
+      } catch (err) {
+        console.error(err);
+        showNotice(err.message || 'No fue posible leer el Excel.', true);
+      }
+    }
+
+    function getCell(sheet, address) {
+      const cell = sheet[address];
+      return cell ? cell.v : '';
+    }
+
+    function readDatosRow(sheet, row) {
+      return {
+        nombre: clean(getCell(sheet, `A${row}`)),
+        apellidoPaterno: clean(getCell(sheet, `B${row}`)),
+        apellidoMaterno: clean(getCell(sheet, `C${row}`)),
+        curp: clean(getCell(sheet, `D${row}`)),
+        ocupacion: clean(getCell(sheet, `E${row}`)),
+        puesto: clean(getCell(sheet, `F${row}`)),
+        empresa: clean(getCell(sheet, `G${row}`)),
+        rfcEmpresa: clean(getCell(sheet, `H${row}`)),
+        curso: clean(getCell(sheet, `I${row}`)),
+        duracion: clean(getCell(sheet, `J${row}`)),
+        anioInicio: clean(getCell(sheet, `K${row}`)),
+        mesInicio: clean(getCell(sheet, `L${row}`)),
+        diaInicio: clean(getCell(sheet, `M${row}`)),
+        anioFinal: clean(getCell(sheet, `N${row}`)),
+        mesFinal: clean(getCell(sheet, `O${row}`)),
+        diaFinal: clean(getCell(sheet, `P${row}`)),
+        areaTematica: clean(getCell(sheet, `Q${row}`)),
+        agente: clean(getCell(sheet, `R${row}`)),
+        registroSTPS: clean(getCell(sheet, `S${row}`)),
+        patron: clean(getCell(sheet, `T${row}`)),
+        representanteTrabajadores: clean(getCell(sheet, `U${row}`))
+      };
+    }
+
+    function clean(value) {
+      if (value === null || value === undefined) return '';
+      return String(value).trim();
+    }
+
+    function buildDateText(year, month, day) {
+      const y = clean(year);
+      const m = clean(month).padStart(2, '0');
+      const d = clean(day).padStart(2, '0');
+      if (!y && !m && !d) return '';
+      return `${d}/${m}/${y}`;
+    }
+
+    function renderSummary() {
+      const c = state.course;
+      const items = [
+        ['Cliente / Empresa', c.cliente],
+        ['RFC', c.rfc],
+        ['Curso', c.curso],
+        ['Duración', `${c.duracion} horas`],
+        ['Fecha de inicio', c.fechaInicio],
+        ['Fecha final', c.fechaFinal],
+        ['Área temática', c.areaTematica],
+        ['Agente capacitador', c.agente],
+        ['Registro STPS', c.registroSTPS],
+        ['Patrón / Representante legal', c.patron],
+        ['Representante trabajadores', c.representanteTrabajadores],
+        ['Participantes', state.participants.length]
+      ];
+
+      $('summaryGrid').innerHTML = items.map(([label, value]) => `
+        <div class="summary-card">
+          <div class="label">${escapeHtml(label)}</div>
+          <div class="value">${escapeHtml(value || '—')}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderGradesTable() {
+      const tbody = $('gradesTable').querySelector('tbody');
+      calculateParticipantRows();
+      tbody.innerHTML = state.participants.map((p, index) => `
+        <tr>
+          <td>${p.no}</td>
+          <td><strong>${escapeHtml(p.nombreCompleto)}</strong></td>
+          <td>${escapeHtml(p.puesto || '—')}</td>
+          <td><input type="number" min="0" max="10" step="0.1" value="${p.inicial}" data-index="${index}" data-field="inicial"></td>
+          <td><input type="number" min="0" max="10" step="0.1" value="${p.final}" data-index="${index}" data-field="final"></td>
+          <td>${formatNumber(p.mejora)}</td>
+          <td>${formatPercent(p.porcentajeMejora)}</td>
+          <td>${statusBadge(p.estatus)}</td>
+          <td>${escapeHtml(p.observacion)}</td>
+        </tr>
+      `).join('');
+
+      tbody.querySelectorAll('input').forEach(input => {
+        input.addEventListener('input', onGradeInput);
+      });
+    }
+
+    function onGradeInput(event) {
+      const input = event.target;
+      const index = Number(input.dataset.index);
+      const field = input.dataset.field;
+      let value = input.value;
+      if (value !== '') {
+        const n = Number(value);
+        if (n < 0) value = '0';
+        if (n > 10) value = '10';
+      }
+      state.participants[index][field] = value;
+      renderGradesTable();
+      updateLiveMetrics();
+    }
+
+    function getApprovalCriteria() {
+      const value = Number($('approvalInput').value);
+      if (!Number.isFinite(value) || value < 0 || value > 10) return 8;
+      return value;
+    }
+
+    function calculateParticipantRows() {
+      const criteria = getApprovalCriteria();
+      state.participants.forEach(p => {
+        const initial = parseGrade(p.inicial);
+        const final = parseGrade(p.final);
+
+        if (initial === null || final === null) {
+          p.mejora = null;
+          p.porcentajeMejora = null;
+          p.estatus = 'Sin dato';
+          p.observacion = 'Sin información completa para evaluación.';
+          return;
+        }
+
+        p.mejora = final - initial;
+        p.porcentajeMejora = initial === 0 ? null : ((final - initial) / initial) * 100;
+
+        if (final >= criteria) {
+          p.estatus = 'Aprobado';
+          if (p.mejora > 0) p.observacion = 'Participante aprobado con mejora positiva en el proceso de capacitación.';
+          else if (p.mejora === 0) p.observacion = 'Participante aprobado; conserva el nivel de conocimiento registrado.';
+          else p.observacion = 'Participante aprobado, aunque presenta disminución respecto a la evaluación inicial.';
+        } else {
+          p.estatus = 'No aprobado';
+          p.observacion = 'Participante no aprobado; se recomienda reforzamiento del tema.';
+        }
+      });
+    }
+
+    function parseGrade(value) {
+      if (value === '' || value === null || value === undefined) return null;
+      const n = Number(value);
+      if (!Number.isFinite(n)) return null;
+      return Math.max(0, Math.min(10, n));
+    }
+
+    function calculateMetrics() {
+      calculateParticipantRows();
+      const participants = state.participants;
+      const completed = participants.filter(p => parseGrade(p.inicial) !== null && parseGrade(p.final) !== null);
+      const approved = completed.filter(p => p.estatus === 'Aprobado');
+      const failed = completed.filter(p => p.estatus === 'No aprobado');
+      const pending = participants.filter(p => p.estatus === 'Sin dato');
+
+      const avgInitial = average(completed.map(p => parseGrade(p.inicial)));
+      const avgFinal = average(completed.map(p => parseGrade(p.final)));
+      const avgImprovement = avgInitial === null || avgFinal === null ? null : avgFinal - avgInitial;
+      const approvalRate = completed.length ? (approved.length / completed.length) * 100 : 0;
+      const generalLevel = getGeneralLevel(avgFinal, approvalRate);
+
+      state.metrics = {
+        total: participants.length,
+        completed: completed.length,
+        avgInitial,
+        avgFinal,
+        avgImprovement,
+        approvalRate,
+        approved: approved.length,
+        failed: failed.length,
+        pending: pending.length,
+        generalLevel
+      };
+      return state.metrics;
+    }
+
+    function average(values) {
+      const cleanValues = values.filter(v => Number.isFinite(v));
+      if (!cleanValues.length) return null;
+      return cleanValues.reduce((a, b) => a + b, 0) / cleanValues.length;
+    }
+
+    function getGeneralLevel(avgFinal, approvalRate) {
+      if (avgFinal === null) return 'Sin información suficiente';
+      if (avgFinal >= 9 && approvalRate >= 90) return 'Excelente';
+      if (avgFinal >= 8 && approvalRate >= 80) return 'Satisfactorio';
+      return 'Requiere seguimiento';
+    }
+
+    function updateLiveMetrics() {
+      const m = calculateMetrics();
+      $('liveKpis').innerHTML = buildKpiCards(m);
+    }
+
+    function buildKpiCards(m) {
+      return [
+        ['Participantes', m.total, `${m.completed} con evaluación completa`],
+        ['Promedio inicial', formatNumber(m.avgInitial), 'Escala 0 a 10'],
+        ['Promedio final', formatNumber(m.avgFinal), 'Escala 0 a 10'],
+        ['Mejora promedio', formatNumber(m.avgImprovement), 'Puntos de diferencia'],
+        ['Aprobación', formatPercent(m.approvalRate), `${m.approved} aprobados`],
+        ['No aprobados', m.failed, 'Requieren seguimiento'],
+        ['Sin dato', m.pending, 'Evaluación incompleta'],
+        ['Nivel general', m.generalLevel, 'Clasificación automática']
+      ].map(([label, value, sub]) => `
+        <div class="kpi">
+          <div class="kpi-label">${escapeHtml(label)}</div>
+          <div class="kpi-value">${escapeHtml(String(value ?? '—'))}</div>
+          <div class="kpi-sub">${escapeHtml(sub || '')}</div>
+        </div>
+      `).join('');
+    }
+
+    function buildReportPreview() {
+      if (!state.course || !state.participants.length) {
+        alert('Primero debe cargar y leer el Excel.');
+        return;
+      }
+
+      calculateMetrics();
+      const c = state.course;
+      const m = state.metrics;
+      const reportDate = $('reportDateInput').value || formatDateHuman(new Date());
+      const preparedBy = $('preparedByInput').value || 'Ejecutiva Ambiental';
+
+      $('reportPreview').innerHTML = `
+        <section class="pdf-page cover">
+          <div class="brand-block">
+            <div class="brand-mark"></div>
+            <div class="brand-text">Ejecutiva Ambiental</div>
+          </div>
+          <h1>Reporte Ejecutivo de Capacitación</h1>
+          <div class="subtitle">Expediente documental integrado</div>
+          <div class="cover-info">
+            <div><span>Cliente</span><strong>${escapeHtml(c.cliente || '—')}</strong></div>
+            <div><span>RFC</span><strong>${escapeHtml(c.rfc || '—')}</strong></div>
+            <div><span>Curso</span><strong>${escapeHtml(c.curso || '—')}</strong></div>
+            <div><span>Duración</span><strong>${escapeHtml(c.duracion || '—')} horas</strong></div>
+            <div><span>Periodo</span><strong>${escapeHtml(c.fechaInicio || '—')} al ${escapeHtml(c.fechaFinal || '—')}</strong></div>
+            <div><span>Participantes</span><strong>${m.total}</strong></div>
+            <div><span>Fecha del reporte</span><strong>${escapeHtml(reportDate)}</strong></div>
+            <div><span>Elaboró</span><strong>${escapeHtml(preparedBy)}</strong></div>
+          </div>
+          <div class="footer-note"><span>Reporte ejecutivo de capacitación</span><span>Ejecutiva Ambiental</span></div>
+        </section>
+
+        <section class="pdf-page">
+          ${pageHeader('Datos generales del curso', 'Información extraída del Excel base DC-3')}
+          <h3 class="section-title">Datos del curso</h3>
+          <table class="info-table">
+            <tbody>
+              <tr><td>Nombre del curso</td><td>${escapeHtml(c.curso || '—')}</td></tr>
+              <tr><td>Duración</td><td>${escapeHtml(c.duracion || '—')} horas</td></tr>
+              <tr><td>Fecha de inicio</td><td>${escapeHtml(c.fechaInicio || '—')}</td></tr>
+              <tr><td>Fecha final</td><td>${escapeHtml(c.fechaFinal || '—')}</td></tr>
+              <tr><td>Área temática</td><td>${escapeHtml(c.areaTematica || '—')}</td></tr>
+              <tr><td>Agente capacitador</td><td>${escapeHtml(c.agente || '—')}</td></tr>
+              <tr><td>Registro STPS</td><td>${escapeHtml(c.registroSTPS || '—')}</td></tr>
+            </tbody>
+          </table>
+
+          <h3 class="section-title">Datos del cliente</h3>
+          <table class="info-table">
+            <tbody>
+              <tr><td>Nombre o razón social</td><td>${escapeHtml(c.cliente || '—')}</td></tr>
+              <tr><td>RFC</td><td>${escapeHtml(c.rfc || '—')}</td></tr>
+              <tr><td>Patrón o representante legal</td><td>${escapeHtml(c.patron || '—')}</td></tr>
+              <tr><td>Representante de los trabajadores</td><td>${escapeHtml(c.representanteTrabajadores || '—')}</td></tr>
+              <tr><td>Número de participantes</td><td>${m.total}</td></tr>
+            </tbody>
+          </table>
+          <div class="footer-note"><span>Datos generales</span><span>Reporte Ejecutivo de Capacitación</span></div>
+        </section>
+
+        <section class="pdf-page">
+          ${pageHeader('Indicadores ejecutivos', 'Resultados calculados a partir de las calificaciones capturadas manualmente')}
+          <div class="kpi-grid">${buildKpiCards(m)}</div>
+          <h3 class="section-title">Conclusión ejecutiva</h3>
+          <div class="text-box">${escapeHtml(buildExecutiveConclusion()).replace(/\n/g, '<br>')}</div>
+          <h3 class="section-title">Recomendaciones automáticas</h3>
+          <div class="text-box"><ul class="recommendations">${buildRecommendations().map(r => `<li>${escapeHtml(r)}</li>`).join('')}</ul></div>
+          <div class="footer-note"><span>Indicadores</span><span>Reporte Ejecutivo de Capacitación</span></div>
+        </section>
+
+        <section class="pdf-page">
+          ${pageHeader('Gráficas de resultados', 'Visualización del desempeño grupal e individual')}
+          <div class="chart-row">
+            <div class="chart-box"><canvas id="avgChart"></canvas></div>
+            <div class="chart-box"><canvas id="statusChart"></canvas></div>
+            <div class="chart-box large"><canvas id="improvementChart"></canvas></div>
+          </div>
+          <div class="footer-note"><span>Gráficas</span><span>Reporte Ejecutivo de Capacitación</span></div>
+        </section>
+
+        <section class="pdf-page">
+          ${pageHeader('Tabla de participantes y resultados', 'Nombre legible conforme a la hoja DATOS: A + B + C')}
+          <table class="report-table">
+            <thead>
+              <tr>
+                <th>No.</th>
+                <th>Participante</th>
+                <th>Puesto</th>
+                <th>Inicial</th>
+                <th>Final</th>
+                <th>Mejora</th>
+                <th>% Mejora</th>
+                <th>Estatus</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${state.participants.map(p => `
+                <tr>
+                  <td>${p.no}</td>
+                  <td>${escapeHtml(p.nombreCompleto)}</td>
+                  <td>${escapeHtml(p.puesto || '—')}</td>
+                  <td>${formatNumber(parseGrade(p.inicial))}</td>
+                  <td>${formatNumber(parseGrade(p.final))}</td>
+                  <td>${formatNumber(p.mejora)}</td>
+                  <td>${formatPercent(p.porcentajeMejora)}</td>
+                  <td>${escapeHtml(p.estatus)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          <h3 class="section-title">Observaciones por participante</h3>
+          <table class="report-table">
+            <thead>
+              <tr><th>No.</th><th>Participante</th><th>Observación automática</th></tr>
+            </thead>
+            <tbody>
+              ${state.participants.map(p => `
+                <tr>
+                  <td>${p.no}</td>
+                  <td>${escapeHtml(p.nombreCompleto)}</td>
+                  <td>${escapeHtml(p.observacion)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          <div class="footer-note"><span>Participantes</span><span>Reporte Ejecutivo de Capacitación</span></div>
+        </section>
+      `;
+
+      $('previewSection').classList.remove('hidden');
+      $('annexSection').classList.remove('hidden');
+
+      setTimeout(renderCharts, 100);
+    }
+
+    function pageHeader(title, subtitle) {
+      return `
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">${escapeHtml(title)}</h2>
+            <div class="page-subtitle">${escapeHtml(subtitle)}</div>
+          </div>
+          <div class="brand-text" style="font-size:13px;">Ejecutiva Ambiental</div>
+        </div>
+      `;
+    }
+
+    function renderCharts() {
+      Object.values(state.charts).forEach(chart => chart.destroy && chart.destroy());
+      state.charts = {};
+      const m = state.metrics;
+      const css = getComputedStyle(document.documentElement);
+      const green = css.getPropertyValue('--ea-green').trim();
+      const green2 = css.getPropertyValue('--ea-green-2').trim();
+      const dark = css.getPropertyValue('--ea-dark').trim();
+      const gray = '#9AA89A';
+
+      state.charts.avg = new Chart($('avgChart'), {
+        type: 'bar',
+        data: {
+          labels: ['Promedio inicial', 'Promedio final'],
+          datasets: [{ data: [m.avgInitial || 0, m.avgFinal || 0], backgroundColor: [gray, green] }]
+        },
+        options: chartBaseOptions('Promedio inicial vs final')
+      });
+
+      state.charts.status = new Chart($('statusChart'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Aprobados', 'No aprobados', 'Sin dato'],
+          datasets: [{ data: [m.approved, m.failed, m.pending], backgroundColor: [green, '#A52323', '#B36B00'] }]
+        },
+        options: chartBaseOptions('Distribución de estatus')
+      });
+
+      state.charts.improvement = new Chart($('improvementChart'), {
+        type: 'bar',
+        data: {
+          labels: state.participants.map(p => `P${p.no}`),
+          datasets: [{ data: state.participants.map(p => p.mejora || 0), backgroundColor: green2 }]
+        },
+        options: {
+          ...chartBaseOptions('Mejora individual por participante'),
+          scales: { y: { beginAtZero: true }, x: { ticks: { color: dark } } }
+        }
+      });
+    }
+
+    function chartBaseOptions(title) {
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+          legend: { display: true, position: 'bottom' },
+          title: { display: true, text: title, color: '#1C1C1C', font: { size: 13, weight: 'bold' } }
+        },
+        scales: undefined
+      };
+    }
+
+    function buildExecutiveConclusion() {
+      const m = state.metrics;
+      const criteria = getApprovalCriteria();
+      return `Con base en los resultados obtenidos, el grupo presentó un promedio inicial de ${formatNumber(m.avgInitial)} y un promedio final de ${formatNumber(m.avgFinal)}, lo que representa una mejora promedio de ${formatNumber(m.avgImprovement)} puntos. El porcentaje de aprobación fue de ${formatPercent(m.approvalRate)}, considerando como criterio mínimo una calificación final de ${formatNumber(criteria)}. Se registraron ${m.approved} participantes aprobados, ${m.failed} no aprobados y ${m.pending} sin información completa. En términos generales, el curso se clasifica como ${m.generalLevel}, considerando el desempeño grupal y el cumplimiento del criterio mínimo de aprobación establecido.`;
+    }
+
+    function buildRecommendations() {
+      const m = state.metrics;
+      const recommendations = [];
+      if (m.approvalRate >= 90) {
+        recommendations.push('Mantener el esquema de capacitación aplicado y conservar evidencia documental completa del proceso.');
+      } else if (m.approvalRate >= 80) {
+        recommendations.push('Reforzar los temas con menor dominio y dar seguimiento puntual a los participantes con menor calificación final.');
+      } else {
+        recommendations.push('Implementar una sesión de reforzamiento y evaluar nuevamente a los participantes que no alcanzaron el criterio mínimo de aprobación.');
+      }
+      if (m.pending > 0) {
+        recommendations.push('Completar la información faltante de evaluaciones para fortalecer la trazabilidad del expediente documental.');
+      }
+      if (m.failed > 0) {
+        recommendations.push('Documentar acciones de seguimiento para los participantes no aprobados y conservar evidencia de reforzamiento.');
+      }
+      if ((m.avgImprovement || 0) <= 0 && m.completed > 0) {
+        recommendations.push('Revisar la metodología didáctica y el instrumento de evaluación, debido a que la mejora promedio no refleja avance positivo.');
+      }
+      return recommendations;
+    }
+
+    function renderAnnexInputs() {
+      $('annexGrid').innerHTML = annexDefinitions.map(a => `
+        <div class="annex-card">
+          <h3>${escapeHtml(a.title)}</h3>
+          <input type="file" id="annex_${a.key}" accept="application/pdf,image/png,image/jpeg" multiple />
+          <div class="file-list" id="list_${a.key}">Sin archivos cargados.</div>
+        </div>
+      `).join('');
+
+      annexDefinitions.forEach(a => {
+        $(`annex_${a.key}`).addEventListener('change', (event) => {
+          state.annexes[a.key] = Array.from(event.target.files || []);
+          renderFileList(a.key);
+        });
+      });
+    }
+
+    function renderFileList(key) {
+      const files = state.annexes[key] || [];
+      const box = $(`list_${key}`);
+      box.innerHTML = files.length
+        ? files.map(f => `• ${escapeHtml(f.name)} (${Math.round(f.size / 1024)} KB)`).join('<br>')
+        : 'Sin archivos cargados.';
+    }
+
+    async function generateFinalPdf() {
+      if (!$('reportPreview').innerHTML.trim()) {
+        alert('Primero genere la vista previa del reporte ejecutivo.');
+        return;
+      }
+
+      const log = $('progressLog');
+      log.classList.remove('hidden');
+      log.textContent = 'Iniciando generación del PDF final...\n';
+      $('generatePdfBtn').disabled = true;
+
+      try {
+        await wait(250);
+        logAppend('Generando páginas del reporte ejecutivo...');
+        const finalPdf = await PDFLib.PDFDocument.create();
+        const reportPdfBytes = await renderReportToPdfBytes();
+        const reportPdf = await PDFLib.PDFDocument.load(reportPdfBytes);
+        const reportPages = await finalPdf.copyPages(reportPdf, reportPdf.getPageIndices());
+        reportPages.forEach(p => finalPdf.addPage(p));
+
+        for (const section of annexDefinitions) {
+          logAppend(`Integrando sección: ${section.title}`);
+          const separatorBytes = await renderSeparatorToPdfBytes(section.title);
+          const separatorPdf = await PDFLib.PDFDocument.load(separatorBytes);
+          const [separatorPage] = await finalPdf.copyPages(separatorPdf, [0]);
+          finalPdf.addPage(separatorPage);
+
+          const files = state.annexes[section.key] || [];
+          if (!files.length) {
+            logAppend(`Sin archivos cargados para ${section.title}. Se conserva separador.`);
+            continue;
+          }
+
+          for (const file of files) {
+            logAppend(`Agregando archivo: ${file.name}`);
+            await appendFileToPdf(finalPdf, file);
+          }
+        }
+
+        logAppend('Guardando archivo...');
+        const bytes = await finalPdf.save();
+        downloadBlob(new Blob([bytes], { type: 'application/pdf' }), buildPdfFileName());
+        logAppend('PDF final generado correctamente.');
+      } catch (err) {
+        console.error(err);
+        logAppend(`Error: ${err.message || 'No fue posible generar el PDF.'}`);
+        alert('No fue posible generar el PDF final. Revise la consola para más detalle.');
+      } finally {
+        $('generatePdfBtn').disabled = false;
+      }
+    }
+
+    async function renderReportToPdfBytes() {
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF('p', 'pt', 'a4');
+      const pages = Array.from(document.querySelectorAll('#reportPreview .pdf-page'));
+
+      for (let i = 0; i < pages.length; i++) {
+        const page = pages[i];
+        const canvas = await html2canvas(page, { scale: 2, useCORS: true, backgroundColor: '#FFFFFF' });
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        if (i > 0) pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, 0, 595.28, 841.89);
+      }
+      return pdf.output('arraybuffer');
+    }
+
+    async function renderSeparatorToPdfBytes(title) {
+      const { jsPDF } = window.jspdf;
+      const temp = document.createElement('div');
+      temp.style.position = 'fixed';
+      temp.style.left = '-9999px';
+      temp.style.top = '0';
+      temp.innerHTML = `
+        <div class="separator-page">
+          <h2>${escapeHtml(title)}</h2>
+          <p>Sección documental integrada al expediente de capacitación. Los archivos incorporados corresponden a la evidencia cargada por el usuario.</p>
+          <div class="separator-meta">
+            <div><strong>Cliente</strong><br>${escapeHtml(state.course?.cliente || '—')}</div>
+            <div><strong>Curso</strong><br>${escapeHtml(state.course?.curso || '—')}</div>
+            <div><strong>Periodo</strong><br>${escapeHtml(state.course?.fechaInicio || '—')} al ${escapeHtml(state.course?.fechaFinal || '—')}</div>
+            <div><strong>Fecha del reporte</strong><br>${escapeHtml($('reportDateInput').value || formatDateHuman(new Date()))}</div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(temp);
+      const page = temp.querySelector('.separator-page');
+      const canvas = await html2canvas(page, { scale: 2, useCORS: true, backgroundColor: '#FFFFFF' });
+      document.body.removeChild(temp);
+
+      const pdf = new jsPDF('p', 'pt', 'a4');
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 595.28, 841.89);
+      return pdf.output('arraybuffer');
+    }
+
+    async function appendFileToPdf(finalPdf, file) {
+      const bytes = await file.arrayBuffer();
+      if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+        const srcPdf = await PDFLib.PDFDocument.load(bytes, { ignoreEncryption: true });
+        const pages = await finalPdf.copyPages(srcPdf, srcPdf.getPageIndices());
+        pages.forEach(p => finalPdf.addPage(p));
+        return;
+      }
+
+      if (file.type.startsWith('image/')) {
+        let image;
+        if (file.type === 'image/png' || file.name.toLowerCase().endsWith('.png')) {
+          image = await finalPdf.embedPng(bytes);
+        } else {
+          image = await finalPdf.embedJpg(bytes);
+        }
+
+        const page = finalPdf.addPage([612, 792]);
+        const margin = 36;
+        const maxW = 612 - margin * 2;
+        const maxH = 792 - margin * 2;
+        const scaled = image.scaleToFit(maxW, maxH);
+        const x = (612 - scaled.width) / 2;
+        const y = (792 - scaled.height) / 2;
+        page.drawImage(image, { x, y, width: scaled.width, height: scaled.height });
+        return;
+      }
+
+      throw new Error(`Formato no compatible: ${file.name}`);
+    }
+
+    function logAppend(text) {
+      const log = $('progressLog');
+      log.textContent += `${text}\n`;
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function buildPdfFileName() {
+      const c = state.course || {};
+      const date = new Date().toISOString().slice(0, 10);
+      return sanitizeFileName(`Reporte_Capacitacion_${c.cliente || 'Cliente'}_${c.curso || 'Curso'}_${date}.pdf`);
+    }
+
+    function sanitizeFileName(name) {
+      return name
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9._-]+/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_|_$/g, '');
+    }
+
+    function statusBadge(status) {
+      const cls = status === 'Aprobado' ? 'ok' : status === 'No aprobado' ? 'fail' : 'pending';
+      return `<span class="status ${cls}">${escapeHtml(status)}</span>`;
+    }
+
+    function formatNumber(value) {
+      if (value === null || value === undefined || value === '' || !Number.isFinite(Number(value))) return '—';
+      return Number(value).toFixed(1);
+    }
+
+    function formatPercent(value) {
+      if (value === null || value === undefined || value === '' || !Number.isFinite(Number(value))) return '—';
+      return `${Number(value).toFixed(1)}%`;
+    }
+
+    function formatDateHuman(date) {
+      return date.toLocaleDateString('es-MX', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function wait(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+  </script>
+</body>
+</html>
