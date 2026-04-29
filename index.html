@@ -298,9 +298,12 @@
     }
 
     .kpi .kpi-value {
-      font-size: 25px;
+      font-size: 22px;
       color: var(--ea-green);
       font-weight: 800;
+      word-break: break-word;
+      overflow-wrap: break-word;
+      line-height: 1.2;
     }
 
     .kpi .kpi-sub {
@@ -1291,7 +1294,7 @@
     }
 
     function getGeneralLevel(avgFinal, approvalRate) {
-      if (avgFinal === null) return 'Sin información suficiente';
+      if (avgFinal === null) return 'Sin datos';
       if (avgFinal >= 9 && approvalRate >= 90) return 'Excelente';
       if (avgFinal >= 8 && approvalRate >= 80) return 'Satisfactorio';
       return 'Requiere seguimiento';
@@ -1696,7 +1699,7 @@
 
           if (imageFiles.length) {
             logAppend(`  Procesando ${imageFiles.length} imagen(es) — hasta 4 por hoja...`);
-            await appendImagesToPdf(finalPdf, imageFiles);
+            await appendImagesToPdf(finalPdf, imageFiles, section.title);
           }
         }
 
@@ -1910,7 +1913,7 @@
       });
     }
 
-    async function appendImagesToPdf(finalPdf, imageFiles) {
+    async function appendImagesToPdf(finalPdf, imageFiles, sectionTitle) {
       const embedded = [];
       for (const file of imageFiles) {
         try {
@@ -1923,24 +1926,55 @@
           logAppend(`  ✗ Imagen omitida "${file.name}": ${err.message}`);
         }
       }
+      if (!embedded.length) return;
 
-      const margin = 28, gap = 10;
-      const pageW = 612, pageH = 792;
-      const cellW = (pageW - margin * 2 - gap) / 2;
-      const cellH = (pageH - margin * 2 - gap) / 2;
+      const fontBold = await finalPdf.embedFont(PDFLib.StandardFonts.HelveticaBold);
+      const fontReg  = await finalPdf.embedFont(PDFLib.StandardFonts.Helvetica);
+      const green    = PDFLib.rgb(0,     0.337, 0    );
+      const green2   = PDFLib.rgb(0,     0.471, 0.212);
+      const white    = PDFLib.rgb(1,     1,     1    );
+      const gray     = PDFLib.rgb(0.36,  0.36,  0.36 );
+      const lightG   = PDFLib.rgb(0.957, 0.984, 0.957);
+
+      const pageW   = 612, pageH = 792;
+      const headH   = 24,  footH = 18;
+      const margin  = 22,  gap   = 10;
+      const cellW   = (pageW - margin * 2 - gap) / 2;
+      const cellH   = (pageH - headH - footH - margin * 2 - gap) / 2;
+      const total   = Math.ceil(embedded.length / 4);
+      const label   = (sectionTitle || 'Imágenes').toUpperCase();
 
       for (let i = 0; i < embedded.length; i += 4) {
         const page  = finalPdf.addPage([pageW, pageH]);
+        const pgNum = Math.floor(i / 4) + 1;
+
+        /* ── Encabezado ── */
+        page.drawRectangle({ x: 0, y: pageH - headH, width: pageW, height: headH, color: green });
+        page.drawText(`${label}`, {
+          x: 12, y: pageH - headH + 8, size: 8, font: fontBold, color: white
+        });
+        page.drawText(`${pgNum} / ${total}`, {
+          x: pageW - 36, y: pageH - headH + 8, size: 8, font: fontBold, color: white
+        });
+
+        /* ── Pie ── */
+        page.drawRectangle({ x: 0, y: 0, width: pageW, height: footH, color: lightG });
+        page.drawRectangle({ x: 0, y: footH - 1, width: pageW, height: 1, color: green2 });
+        page.drawText('Ejecutiva Ambiental  ·  Expediente de Capacitación', {
+          x: 12, y: 5, size: 7, font: fontReg, color: gray
+        });
+
+        /* ── Grid 2×2 ── */
         const batch = embedded.slice(i, i + 4);
         batch.forEach((img, j) => {
           const col    = j % 2;
           const row    = Math.floor(j / 2);
           const bx     = margin + col * (cellW + gap);
-          const by     = pageH - margin - cellH - row * (cellH + gap);
+          const by     = pageH - headH - margin - cellH - row * (cellH + gap);
           const scaled = img.scaleToFit(cellW, cellH);
           page.drawImage(img, {
-            x: bx + (cellW - scaled.width)  / 2,
-            y: by + (cellH - scaled.height) / 2,
+            x:      bx + (cellW - scaled.width)  / 2,
+            y:      by + (cellH - scaled.height) / 2,
             width:  scaled.width,
             height: scaled.height
           });
