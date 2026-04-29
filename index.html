@@ -1686,9 +1686,17 @@
             continue;
           }
 
-          for (const file of files) {
-            logAppend(`  Agregando: ${file.name}`);
+          const pdfFiles   = files.filter(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
+          const imageFiles = files.filter(f => !pdfFiles.includes(f));
+
+          for (const file of pdfFiles) {
+            logAppend(`  Agregando PDF: ${file.name}`);
             await appendFileToPdf(finalPdf, file);
+          }
+
+          if (imageFiles.length) {
+            logAppend(`  Procesando ${imageFiles.length} imagen(es) — hasta 4 por hoja...`);
+            await appendImagesToPdf(finalPdf, imageFiles);
           }
         }
 
@@ -1750,32 +1758,71 @@
     }
 
     async function renderSeparatorToPdfBytes(title) {
-      const { jsPDF } = window.jspdf;
-      const temp = document.createElement('div');
-      temp.style.position = 'absolute';
-      temp.style.top = '-10000px';
-      temp.style.left = '0';
-      temp.style.width = '794px';
-      temp.innerHTML = `
-        <div class="separator-page">
-          <h2>${escapeHtml(title)}</h2>
-          <p>Sección documental integrada al expediente de capacitación. Los archivos incorporados corresponden a la evidencia cargada por el usuario.</p>
-          <div class="separator-meta">
-            <div><strong>Cliente</strong><br>${escapeHtml(state.course?.cliente || '—')}</div>
-            <div><strong>Curso</strong><br>${escapeHtml(state.course?.curso || '—')}</div>
-            <div><strong>Periodo</strong><br>${escapeHtml(state.course?.fechaInicio || '—')} al ${escapeHtml(state.course?.fechaFinal || '—')}</div>
-            <div><strong>Fecha del reporte</strong><br>${escapeHtml($('reportDateInput').value || formatDateHuman(new Date()))}</div>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(temp);
-      const page = temp.querySelector('.separator-page');
-      const canvas = await html2canvas(page, { scale: 2, useCORS: true, backgroundColor: '#FFFFFF' });
-      document.body.removeChild(temp);
+      const pdfDoc = await PDFLib.PDFDocument.create();
+      const W = 595.28, H = 841.89;
+      const page = pdfDoc.addPage([W, H]);
 
-      const pdf = new jsPDF('p', 'pt', 'a4');
-      pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 595.28, 841.89);
-      return pdf.output('arraybuffer');
+      const fontBold = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+      const fontReg  = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+
+      const green  = PDFLib.rgb(0,       0.337, 0      ); // #005600
+      const green2 = PDFLib.rgb(0,       0.471, 0.212  ); // #007836
+      const dark   = PDFLib.rgb(0.11,    0.11,  0.11   ); // #1C1C1C
+      const gray   = PDFLib.rgb(0.357,   0.357, 0.357  ); // #5B5B5B
+      const lightG = PDFLib.rgb(0.957,   0.984, 0.957  ); // #F4F8F4
+
+      // Barra superior
+      page.drawRectangle({ x: 0, y: H - 10, width: W, height: 10, color: green });
+
+      // Acento lateral izquierdo
+      page.drawRectangle({ x: 40, y: H - 230, width: 5, height: 175, color: green2 });
+
+      // Título de sección
+      const titleSize = title.length > 32 ? 26 : 32;
+      page.drawText(title, {
+        x: 58, y: H - 130,
+        size: titleSize, font: fontBold, color: green,
+        maxWidth: W - 110, lineHeight: titleSize * 1.2
+      });
+
+      // Subtítulo
+      page.drawText('Sección documental integrada al expediente de capacitación.', {
+        x: 58, y: H - 185, size: 10, font: fontReg, color: gray
+      });
+      page.drawText('Los archivos incorporados corresponden a la evidencia cargada por el usuario.', {
+        x: 58, y: H - 200, size: 10, font: fontReg, color: gray
+      });
+
+      // Metadatos en cuadros (2×2)
+      const trunc = (s, n) => (s || '—').length > n ? (s || '—').substring(0, n) + '…' : (s || '—');
+      const meta = [
+        ['CLIENTE',             trunc(state.course?.cliente, 44)],
+        ['CURSO',               trunc(state.course?.curso,   44)],
+        ['PERIODO',             `${state.course?.fechaInicio || '—'} al ${state.course?.fechaFinal || '—'}`],
+        ['FECHA DEL REPORTE',   $('reportDateInput').value || formatDateHuman(new Date())]
+      ];
+
+      const boxW = (W - 80 - 14) / 2;
+      const boxH = 54;
+      const startY = H - 268;
+
+      meta.forEach(([label, value], i) => {
+        const col = i % 2;
+        const row = Math.floor(i / 2);
+        const bx = 40 + col * (boxW + 14);
+        const by = startY - row * (boxH + 10);
+        page.drawRectangle({ x: bx, y: by, width: boxW, height: boxH, color: lightG, borderColor: green2, borderWidth: 1 });
+        page.drawText(label, { x: bx + 10, y: by + boxH - 17, size: 7.5, font: fontBold, color: green2 });
+        page.drawText(value, { x: bx + 10, y: by + 13, size: 10.5, font: fontReg, color: dark });
+      });
+
+      // Barra inferior + pie
+      page.drawRectangle({ x: 0, y: 0, width: W, height: 5, color: green });
+      page.drawText('Ejecutiva Ambiental  ·  Expediente de Capacitación', {
+        x: 40, y: 16, size: 8, font: fontReg, color: gray
+      });
+
+      return pdfDoc.save();
     }
 
     async function resizeImageIfNeeded(file, maxPx = 2400) {
@@ -1800,6 +1847,44 @@
         img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
         img.src = url;
       });
+    }
+
+    async function appendImagesToPdf(finalPdf, imageFiles) {
+      const embedded = [];
+      for (const file of imageFiles) {
+        try {
+          const resized = await resizeImageIfNeeded(file, 2400);
+          const bytes   = await resized.arrayBuffer();
+          const isPng   = resized.type === 'image/png' || resized.name.toLowerCase().endsWith('.png');
+          const img     = isPng ? await finalPdf.embedPng(bytes) : await finalPdf.embedJpg(bytes);
+          embedded.push(img);
+        } catch (err) {
+          logAppend(`  ✗ Imagen omitida "${file.name}": ${err.message}`);
+        }
+      }
+
+      const margin = 28, gap = 10;
+      const pageW = 612, pageH = 792;
+      const cellW = (pageW - margin * 2 - gap) / 2;
+      const cellH = (pageH - margin * 2 - gap) / 2;
+
+      for (let i = 0; i < embedded.length; i += 4) {
+        const page  = finalPdf.addPage([pageW, pageH]);
+        const batch = embedded.slice(i, i + 4);
+        batch.forEach((img, j) => {
+          const col    = j % 2;
+          const row    = Math.floor(j / 2);
+          const bx     = margin + col * (cellW + gap);
+          const by     = pageH - margin - cellH - row * (cellH + gap);
+          const scaled = img.scaleToFit(cellW, cellH);
+          page.drawImage(img, {
+            x: bx + (cellW - scaled.width)  / 2,
+            y: by + (cellH - scaled.height) / 2,
+            width:  scaled.width,
+            height: scaled.height
+          });
+        });
+      }
     }
 
     async function appendFileToPdf(finalPdf, file) {
