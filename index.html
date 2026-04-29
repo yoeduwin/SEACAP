@@ -1807,23 +1807,72 @@
         if (fw > 0) page.drawRectangle({ x, y, width: fw, height: h, color: col });
       }
 
+      function gaugeArcPaths(cx, cy, r, pct) {
+        const bgPath = `M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`;
+        const p = Math.max(0, Math.min(100, pct));
+        if (p < 0.5) return { bgPath, fillPath: null };
+        const angle    = (1 - p / 100) * Math.PI;
+        const endX     = cx + r * Math.cos(angle);
+        const endY     = cy - r * Math.sin(angle);
+        const largeArc = p > 50 ? 1 : 0;
+        const fillPath = `M ${cx - r} ${cy} A ${r} ${r} 0 ${largeArc} 1 ${endX.toFixed(2)} ${endY.toFixed(2)}`;
+        return { bgPath, fillPath };
+      }
+
       // ── PAGE 1: PORTADA ─────────────────────────────────────────────────
       {
         const page = finalPdf.addPage([W, H]);
-        page.drawRectangle({ x: 0, y: H - 18, width: W, height: 18, color: C.green });
-        page.drawText('Ejecutiva Ambiental', { x: ML, y: H - 54, size: 20, font: fontBold, color: C.green });
-        page.drawText('Sistema de Gestión de Capacitación', { x: ML, y: H - 70, size: 9, font: fontReg, color: C.gray });
-        page.drawRectangle({ x: ML, y: H - 80, width: CW, height: 1.5, color: C.green2 });
 
-        let cy = H - 112;
-        const h1 = wrapText('Reporte Ejecutivo de Capacitación', fontBold, 26, CW);
-        h1.forEach((line, i) => {
-          page.drawText(line, { x: ML, y: cy - i * 34, size: 26, font: fontBold, color: C.dark });
+        // Fondo verde muy suave (aproxima gradiente del HTML)
+        page.drawRectangle({ x: 0, y: 0, width: W, height: H, color: PDFLib.rgb(0.976, 0.996, 0.976) });
+
+        // Banda superior verde (16pt, igual que border-top del CSS)
+        page.drawRectangle({ x: 0, y: H - 16, width: W, height: 16, color: C.green });
+
+        // Círculo decorativo esquina inferior derecha (replicando ::after del CSS)
+        page.drawEllipse({
+          x: W + 68, y: -68,
+          xScale: 155, yScale: 155,
+          borderColor: PDFLib.rgb(0.76, 0.91, 0.76),
+          borderWidth: 36,
         });
-        cy -= h1.length * 34 + 10;
-        page.drawText('Expediente documental integrado', { x: ML, y: cy, size: 15, font: fontReg, color: C.green2 });
-        cy -= 44;
 
+        // Fetch logo (con fallback a cuadro verde)
+        let logo = null;
+        try {
+          const res = await fetch('https://raw.githubusercontent.com/yoeduwin/SEACAP/main/logo.png');
+          if (res.ok) logo = await finalPdf.embedPng(await res.arrayBuffer());
+        } catch (_) {}
+
+        let cy = H - 36;
+
+        if (logo) {
+          const s = logo.scaleToFit(130, 44);
+          page.drawImage(logo, { x: ML, y: cy - s.height, width: s.width, height: s.height });
+          page.drawText('Ejecutiva Ambiental', {
+            x: ML + s.width + 12, y: cy - s.height / 2 - 7,
+            size: 19, font: fontBold, color: C.green
+          });
+        } else {
+          // Brand mark fallback: cuadro verde + "EA" + texto
+          page.drawRectangle({ x: ML, y: cy - 44, width: 44, height: 44, color: C.green });
+          page.drawText('EA', { x: ML + 10, y: cy - 30, size: 18, font: fontBold, color: C.white });
+          page.drawText('Ejecutiva Ambiental', { x: ML + 56, y: cy - 28, size: 19, font: fontBold, color: C.green });
+        }
+        cy -= 44 + 68;  // alto logo + margin-bottom equivalente al HTML
+
+        // H1 (34pt bold, wrapeado si necesario)
+        const h1 = wrapText('Reporte Ejecutivo de Capacitación', fontBold, 34, CW - 20);
+        h1.forEach((line, i) => {
+          page.drawText(line, { x: ML, y: cy - i * 44, size: 34, font: fontBold, color: C.dark });
+        });
+        cy -= h1.length * 44 + 14;
+
+        // Subtítulo (17pt bold verde)
+        page.drawText('Expediente documental integrado', { x: ML, y: cy, size: 17, font: fontBold, color: C.green });
+        cy -= 48;
+
+        // Grid 2×4 de info con acento izquierdo verde
         const coverColW = (CW - 14) / 2;
         const coverItems = [
           ['Cliente',           c.cliente           || '—'],
@@ -1843,12 +1892,13 @@
             const [lbl, val] = item;
             const bx = ML + col * (coverColW + 14);
             const by = cy - itemH;
-            page.drawRectangle({ x: bx, y: by, width: coverColW, height: itemH, color: C.lightG, borderColor: C.line, borderWidth: 0.5 });
-            page.drawRectangle({ x: bx, y: by, width: 3.5, height: itemH, color: C.green });
-            page.drawText(lbl, { x: bx + 10, y: by + itemH - 16, size: 8.5, font: fontBold, color: C.gray });
+            page.drawRectangle({ x: bx, y: by, width: coverColW, height: itemH,
+              color: PDFLib.rgb(1, 1, 1), borderColor: C.line, borderWidth: 0.5 });
+            page.drawRectangle({ x: bx, y: by, width: 4, height: itemH, color: C.green });
+            page.drawText(lbl.toUpperCase(), { x: bx + 12, y: by + itemH - 16, size: 8, font: fontBold, color: C.gray });
             const valLines = wrapText(String(val), fontBold, 11, coverColW - 18);
             valLines.slice(0, 2).forEach((vl, vi) => {
-              page.drawText(vl, { x: bx + 10, y: by + itemH - 30 - vi * 14, size: 11, font: fontBold, color: C.dark });
+              page.drawText(vl, { x: bx + 12, y: by + itemH - 30 - vi * 14, size: 11, font: fontBold, color: C.dark });
             });
           }
           cy -= 58;
@@ -1952,31 +2002,55 @@
 
         const halfW = (CW - 12) / 2;
 
-        // Panel izquierdo: tasa de aprobación
+        // Panel izquierdo: gauge semicircular (replicando SVG del HTML)
         {
-          const bx  = ML;
-          const panH = 126;
-          const pct  = m.approvalRate || 0;
+          const bx     = ML;
+          const panH   = 148;
+          const pct    = m.approvalRate || 0;
           const pctColor = pct >= 90 ? C.green : pct >= 70 ? C.green2 : pct >= 50 ? C.warn : C.danger;
-          page.drawRectangle({ x: bx, y: cy - panH, width: halfW, height: panH, color: C.lightG, borderColor: C.line, borderWidth: 0.8 });
-          page.drawText('TASA DE APROBACIÓN', { x: bx + 8, y: cy - 14, size: 7.5, font: fontBold, color: C.gray });
+          page.drawRectangle({ x: bx, y: cy - panH, width: halfW, height: panH,
+            color: C.lightG, borderColor: C.line, borderWidth: 0.8 });
+
+          // Título de la tarjeta con separador
+          page.drawText('TASA DE APROBACIÓN', { x: bx + 10, y: cy - 14, size: 7.5, font: fontBold, color: C.gray });
+          page.drawRectangle({ x: bx + 10, y: cy - 20, width: halfW - 20, height: 0.8, color: C.line });
+
+          // Arco del gauge (SVG path vía drawSvgPath)
+          // SVG origin (0,0) → PDF (bx, cy); SVG y-down se invierte a PDF y-up
+          const cx_s = halfW / 2, cy_s = 90, r_g = 62;
+          const { bgPath, fillPath } = gaugeArcPaths(cx_s, cy_s, r_g, pct);
+          page.drawSvgPath(bgPath, { x: bx, y: cy, borderColor: PDFLib.rgb(0.87, 0.93, 0.87), borderWidth: 13 });
+          if (fillPath) {
+            page.drawSvgPath(fillPath, { x: bx, y: cy, borderColor: pctColor, borderWidth: 13 });
+          }
+
+          // Texto % centrado dentro del arco
           const pctText = `${pct.toFixed(1)}%`;
-          const pctW    = fontBold.widthOfTextAtSize(pctText, 30);
-          page.drawText(pctText, { x: bx + (halfW - pctW) / 2, y: cy - 56, size: 30, font: fontBold, color: pctColor });
-          progBar(page, bx + 10, cy - 68, halfW - 20, 8, pct, pctColor);
+          const pctTW   = fontBold.widthOfTextAtSize(pctText, 28);
+          page.drawText(pctText, {
+            x: bx + cx_s - pctTW / 2, y: cy - cy_s + 24,
+            size: 28, font: fontBold, color: pctColor
+          });
+          const lbW = fontBold.widthOfTextAtSize('APROBACIÓN', 7);
+          page.drawText('APROBACIÓN', {
+            x: bx + cx_s - lbW / 2, y: cy - cy_s + 9,
+            size: 7, font: fontBold, color: C.gray
+          });
+
+          // Stats en 3 columnas debajo del arco
           const stW = (halfW - 20) / 3;
           [['Aprobados', String(m.approved), C.green], ['No aprobados', String(m.failed), C.danger], ['Sin dato', String(m.pending), C.warn]]
             .forEach(([lbl, val, col], i) => {
               const sx = bx + 10 + i * stW;
-              page.drawText(lbl, { x: sx, y: cy - 88, size: 6.5, font: fontReg, color: C.gray });
-              page.drawText(val,  { x: sx, y: cy - 101, size: 13, font: fontBold, color: col });
+              page.drawText(lbl, { x: sx, y: cy - cy_s - 14, size: 6.5, font: fontReg, color: C.gray });
+              page.drawText(val,  { x: sx, y: cy - cy_s - 27, size: 13, font: fontBold, color: col });
             });
         }
 
         // Panel derecho: comparativo de promedios
         {
           const bx  = ML + halfW + 12;
-          const panH = 126;
+          const panH = 148;
           const barW = halfW - 50;
           const init = m.avgInitial, fin = m.avgFinal, imp = m.avgImprovement;
           page.drawRectangle({ x: bx, y: cy - panH, width: halfW, height: panH, color: C.lightG, borderColor: C.line, borderWidth: 0.8 });
@@ -1989,11 +2063,11 @@
           page.drawText(formatNumber(fin), { x: bx + 8 + barW + 4, y: cy - 76, size: 9, font: fontBold, color: C.green });
           const impColor = (imp || 0) >= 0 ? C.green : C.danger;
           const impText  = (imp !== null && Number.isFinite(imp)) ? `${imp >= 0 ? '+' : ''}${imp.toFixed(1)} pts` : '—';
-          page.drawRectangle({ x: bx + 8, y: cy - 122, width: halfW - 16, height: 30, color: C.greenH, borderColor: C.line, borderWidth: 0.5 });
-          page.drawText('Mejora promedio', { x: bx + 14, y: cy - 103, size: 7.5, font: fontReg, color: C.gray });
-          page.drawText(impText,           { x: bx + 14, y: cy - 116, size: 11,  font: fontBold, color: impColor });
+          page.drawRectangle({ x: bx + 8, y: cy - 144, width: halfW - 16, height: 30, color: C.greenH, borderColor: C.line, borderWidth: 0.5 });
+          page.drawText('Mejora promedio', { x: bx + 14, y: cy - 125, size: 7.5, font: fontReg, color: C.gray });
+          page.drawText(impText,           { x: bx + 14, y: cy - 138, size: 11,  font: fontBold, color: impColor });
         }
-        cy -= 136;
+        cy -= 158;
 
         // Panel izquierdo: distribución
         {
@@ -2007,8 +2081,8 @@
           ].forEach(([lbl, val, tot, col]) => {
             const pct  = tot > 0 ? (val / tot) * 100 : 0;
             const barW = halfW - 90;
-            page.drawRectangle({ x: bx + 8, y: dy - 5, width: 7, height: 7, color: col });
-            page.drawText(lbl, { x: bx + 20, y: dy, size: 8, font: fontReg, color: C.dark });
+            page.drawEllipse({ x: bx + 12, y: dy - 2, xScale: 4, yScale: 4, color: col });
+            page.drawText(lbl, { x: bx + 22, y: dy, size: 8, font: fontReg, color: C.dark });
             progBar(page, bx + 20, dy - 14, barW, 7, pct, col);
             page.drawText(`${val}  (${pct.toFixed(0)}%)`, { x: bx + 20 + barW + 4, y: dy, size: 8, font: fontBold, color: col });
             dy -= 28;
