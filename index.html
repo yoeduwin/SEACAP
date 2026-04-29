@@ -1124,7 +1124,7 @@
         ['Cliente / Empresa', c.cliente],
         ['RFC', c.rfc],
         ['Curso', c.curso],
-        ['Duración', `${c.duracion} horas`],
+        ['Duración', formatDuration(c.duracion)],
         ['Fecha de inicio', c.fechaInicio],
         ['Fecha final', c.fechaFinal],
         ['Área temática', c.areaTematica],
@@ -1353,7 +1353,7 @@
             <div><span>Cliente</span><strong>${escapeHtml(c.cliente || '—')}</strong></div>
             <div><span>RFC</span><strong>${escapeHtml(c.rfc || '—')}</strong></div>
             <div><span>Curso</span><strong>${escapeHtml(c.curso || '—')}</strong></div>
-            <div><span>Duración</span><strong>${escapeHtml(c.duracion || '—')} horas</strong></div>
+            <div><span>Duración</span><strong>${escapeHtml(formatDuration(c.duracion))}</strong></div>
             <div><span>Periodo</span><strong>${escapeHtml(c.fechaInicio || '—')} al ${escapeHtml(c.fechaFinal || '—')}</strong></div>
             <div><span>Participantes</span><strong>${m.total}</strong></div>
             <div><span>Fecha del reporte</span><strong>${escapeHtml(reportDate)}</strong></div>
@@ -1368,7 +1368,7 @@
           <table class="info-table">
             <tbody>
               <tr><td>Nombre del curso</td><td>${escapeHtml(c.curso || '—')}</td></tr>
-              <tr><td>Duración</td><td>${escapeHtml(c.duracion || '—')} horas</td></tr>
+              <tr><td>Duración</td><td>${escapeHtml(formatDuration(c.duracion))}</td></tr>
               <tr><td>Fecha de inicio</td><td>${escapeHtml(c.fechaInicio || '—')}</td></tr>
               <tr><td>Fecha final</td><td>${escapeHtml(c.fechaFinal || '—')}</td></tr>
               <tr><td>Área temática</td><td>${escapeHtml(c.areaTematica || '—')}</td></tr>
@@ -1735,7 +1735,7 @@
         try {
           await waitForImages(page);
           canvas = await html2canvas(page, {
-            scale: 1.5,
+            scale: 2,
             useCORS: true,
             allowTaint: false,
             backgroundColor: '#FFFFFF',
@@ -1753,7 +1753,7 @@
           ctx.font = '14px Arial';
           ctx.fillText(`Error al capturar página ${i + 1}: ${err.message}`, 40, 80);
         }
-        const imgData = canvas.toDataURL('image/jpeg', 0.88);
+        const imgData = canvas.toDataURL('image/jpeg', 0.92);
         if (i > 0) pdf.addPage();
         pdf.addImage(imgData, 'JPEG', 0, 0, 595.28, 841.89);
       }
@@ -2057,6 +2057,12 @@
     function statusBadge(status) {
       const cls = status === 'Aprobado' ? 'ok' : status === 'No aprobado' ? 'fail' : 'pending';
       return `<span class="status ${cls}">${escapeHtml(status)}</span>`;
+    }
+
+    function formatDuration(value) {
+      if (!value) return '—';
+      const s = String(value).trim();
+      return /hora/i.test(s) ? s : `${s} horas`;
     }
 
     function formatNumber(value) {
