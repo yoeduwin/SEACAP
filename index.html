@@ -1765,61 +1765,122 @@
       const fontBold = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
       const fontReg  = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
 
-      const green  = PDFLib.rgb(0,       0.337, 0      ); // #005600
-      const green2 = PDFLib.rgb(0,       0.471, 0.212  ); // #007836
-      const dark   = PDFLib.rgb(0.11,    0.11,  0.11   ); // #1C1C1C
-      const gray   = PDFLib.rgb(0.357,   0.357, 0.357  ); // #5B5B5B
-      const lightG = PDFLib.rgb(0.957,   0.984, 0.957  ); // #F4F8F4
+      const green  = PDFLib.rgb(0,      0.337, 0     );
+      const green2 = PDFLib.rgb(0,      0.471, 0.212 );
+      const white  = PDFLib.rgb(1,      1,     1     );
+      const dark   = PDFLib.rgb(0.11,   0.11,  0.11  );
+      const gray   = PDFLib.rgb(0.36,   0.36,  0.36  );
+      const lightG = PDFLib.rgb(0.957,  0.984, 0.957 );
 
-      // Barra superior
-      page.drawRectangle({ x: 0, y: H - 10, width: W, height: 10, color: green });
+      function wrapText(text, font, size, maxW) {
+        const words = (text || '—').split(' ');
+        const lines = [];
+        let line = '';
+        for (const w of words) {
+          const test = line ? `${line} ${w}` : w;
+          if (font.widthOfTextAtSize(test, size) > maxW && line) {
+            lines.push(line);
+            line = w;
+          } else {
+            line = test;
+          }
+        }
+        if (line) lines.push(line);
+        return lines.length ? lines : ['—'];
+      }
 
-      // Acento lateral izquierdo
-      page.drawRectangle({ x: 40, y: H - 230, width: 5, height: 175, color: green2 });
+      /* ── BANDA VERDE SUPERIOR ─────────────────────────────── */
+      const bandH = 155;
+      page.drawRectangle({ x: 0, y: H - bandH, width: W, height: bandH, color: green });
 
-      // Título de sección
-      const titleSize = title.length > 32 ? 26 : 32;
-      page.drawText(title, {
-        x: 58, y: H - 130,
-        size: titleSize, font: fontBold, color: green,
-        maxWidth: W - 110, lineHeight: titleSize * 1.2
+      // Línea decorativa + etiqueta pequeña
+      page.drawRectangle({ x: 40, y: H - 34, width: 70, height: 2, color: white });
+      page.drawText('EXPEDIENTE DE CAPACITACIÓN', {
+        x: 40, y: H - 26, size: 8, font: fontBold, color: white
       });
 
-      // Subtítulo
+      // Título (hasta 2 líneas con wrap)
+      const titleSize = title.length > 35 ? 24 : 28;
+      const titleLines = wrapText(title, fontBold, titleSize, W - 90).slice(0, 2);
+      titleLines.forEach((line, i) => {
+        page.drawText(line, {
+          x: 40, y: H - 82 - i * (titleSize * 1.3),
+          size: titleSize, font: fontBold, color: white
+        });
+      });
+
+      /* ── BARRA LATERAL IZQUIERDA (debajo de la banda) ──────── */
+      page.drawRectangle({ x: 0, y: 6, width: 6, height: H - bandH - 6, color: green2 });
+
+      /* ── DESCRIPCIÓN ──────────────────────────────────────── */
+      const descY = H - bandH - 26;
       page.drawText('Sección documental integrada al expediente de capacitación.', {
-        x: 58, y: H - 185, size: 10, font: fontReg, color: gray
+        x: 20, y: descY, size: 10, font: fontReg, color: gray
       });
-      page.drawText('Los archivos incorporados corresponden a la evidencia cargada por el usuario.', {
-        x: 58, y: H - 200, size: 10, font: fontReg, color: gray
+      page.drawText('Los archivos corresponden a la evidencia cargada por el usuario para este proceso.', {
+        x: 20, y: descY - 15, size: 10, font: fontReg, color: gray
       });
 
-      // Metadatos en cuadros (2×2)
-      const trunc = (s, n) => (s || '—').length > n ? (s || '—').substring(0, n) + '…' : (s || '—');
+      /* ── METADATOS 2×2 con wrap y alto dinámico ───────────── */
       const meta = [
-        ['CLIENTE',             trunc(state.course?.cliente, 44)],
-        ['CURSO',               trunc(state.course?.curso,   44)],
-        ['PERIODO',             `${state.course?.fechaInicio || '—'} al ${state.course?.fechaFinal || '—'}`],
-        ['FECHA DEL REPORTE',   $('reportDateInput').value || formatDateHuman(new Date())]
+        ['CLIENTE',           state.course?.cliente           || '—'],
+        ['CURSO',             state.course?.curso             || '—'],
+        ['PERIODO',           `${state.course?.fechaInicio || '—'} al ${state.course?.fechaFinal || '—'}`],
+        ['FECHA DEL REPORTE', $('reportDateInput').value      || formatDateHuman(new Date())]
       ];
 
-      const boxW = (W - 80 - 14) / 2;
-      const boxH = 54;
-      const startY = H - 268;
+      const mX = 20, mGap = 12;
+      const boxW  = (W - mX * 2 - mGap) / 2;
+      const lineH = 14, padV = 12, labelH = 18;
 
-      meta.forEach(([label, value], i) => {
-        const col = i % 2;
-        const row = Math.floor(i / 2);
-        const bx = 40 + col * (boxW + 14);
-        const by = startY - row * (boxH + 10);
-        page.drawRectangle({ x: bx, y: by, width: boxW, height: boxH, color: lightG, borderColor: green2, borderWidth: 1 });
-        page.drawText(label, { x: bx + 10, y: by + boxH - 17, size: 7.5, font: fontBold, color: green2 });
-        page.drawText(value, { x: bx + 10, y: by + 13, size: 10.5, font: fontReg, color: dark });
+      const boxes = meta.map(([label, value]) => {
+        const lines = wrapText(value, fontReg, 11, boxW - 20);
+        return { label, lines, boxH: labelH + padV + lines.length * lineH + padV };
       });
 
-      // Barra inferior + pie
-      page.drawRectangle({ x: 0, y: 0, width: W, height: 5, color: green });
+      const row0H = Math.max(boxes[0].boxH, boxes[1].boxH);
+      const row1H = Math.max(boxes[2].boxH, boxes[3].boxH);
+      const gridStartY = H - bandH - 62;
+
+      [0, 1].forEach(row => {
+        const rowH  = row === 0 ? row0H : row1H;
+        const rowBy = gridStartY - (row === 0 ? rowH : row0H + mGap + row1H);
+
+        [0, 1].forEach(col => {
+          const { label, lines, boxH } = boxes[row * 2 + col];
+          const bx = mX + col * (boxW + mGap);
+          const by = rowBy + (rowH - boxH);
+
+          // Cuadro con fondo verde suave
+          page.drawRectangle({
+            x: bx, y: by, width: boxW, height: boxH,
+            color: lightG, borderColor: green2, borderWidth: 1
+          });
+          // Franja de cabecera interior
+          page.drawRectangle({
+            x: bx, y: by + boxH - labelH, width: boxW, height: labelH,
+            color: PDFLib.rgb(0.878, 0.945, 0.878), borderColor: green2, borderWidth: 0
+          });
+          // Etiqueta
+          page.drawText(label, {
+            x: bx + 10, y: by + boxH - labelH + 4,
+            size: 7.5, font: fontBold, color: green2
+          });
+          // Valor (multilínea)
+          lines.forEach((vLine, vi) => {
+            page.drawText(vLine, {
+              x: bx + 10,
+              y: by + boxH - labelH - padV - vi * lineH,
+              size: 11, font: fontReg, color: dark
+            });
+          });
+        });
+      });
+
+      /* ── PIE ──────────────────────────────────────────────── */
+      page.drawRectangle({ x: 0, y: 0, width: W, height: 6, color: green });
       page.drawText('Ejecutiva Ambiental  ·  Expediente de Capacitación', {
-        x: 40, y: 16, size: 8, font: fontReg, color: gray
+        x: 20, y: 14, size: 8, font: fontReg, color: gray
       });
 
       return pdfDoc.save();
