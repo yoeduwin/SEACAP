@@ -1735,7 +1735,7 @@
         try {
           await waitForImages(page);
           canvas = await html2canvas(page, {
-            scale: 2,
+            scale: 3,
             useCORS: true,
             allowTaint: false,
             backgroundColor: '#FFFFFF',
@@ -1753,9 +1753,9 @@
           ctx.font = '14px Arial';
           ctx.fillText(`Error al capturar página ${i + 1}: ${err.message}`, 40, 80);
         }
-        const imgData = canvas.toDataURL('image/jpeg', 0.92);
+        const imgData = canvas.toDataURL('image/png');
         if (i > 0) pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, 0, 595.28, 841.89);
+        pdf.addImage(imgData, 'PNG', 0, 0, 595.28, 841.89);
       }
       return pdf.output('arraybuffer');
     }
