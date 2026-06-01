@@ -821,11 +821,11 @@
 <body>
   <header class="app-header" style="display:flex;align-items:center;gap:20px;">
     <img id="appLogo"
-         src="https://raw.githubusercontent.com/yoeduwin/SEACAP/main/logo.png"
+         src="logo.png"
          crossorigin="anonymous"
          alt="Ejecutiva Ambiental"
          style="height:54px;width:auto;object-fit:contain;"
-         onerror="this.style.display='none'" />
+         onerror="this.src='https://raw.githubusercontent.com/yoeduwin/SEACAP/main/logo.png';this.onerror=function(){this.style.display='none'};" />
     <div>
       <h1>Reporte Ejecutivo de Capacitación + Expediente Documental</h1>
       <p>Generador local para integrar Excel DC-3, calificaciones, indicadores y anexos en un solo PDF.</p>
@@ -1337,11 +1337,11 @@
       $('reportPreview').innerHTML = `
         <section class="pdf-page cover">
           <div class="brand-block">
-            <img src="https://raw.githubusercontent.com/yoeduwin/SEACAP/main/logo.png"
+            <img src="logo.png"
                  crossorigin="anonymous"
                  alt="Ejecutiva Ambiental"
                  style="height:46px;width:auto;object-fit:contain;"
-                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+                 onerror="this.src='https://raw.githubusercontent.com/yoeduwin/SEACAP/main/logo.png';this.onerror=function(){this.style.display='none';this.nextElementSibling.style.display='flex';};" />
             <div class="brand-mark" style="display:none;"></div>
             <div class="brand-text">Ejecutiva Ambiental</div>
           </div>
@@ -1840,8 +1840,9 @@
         // Fetch logo (con fallback a cuadro verde)
         let logo = null;
         try {
-          const res = await fetch('https://raw.githubusercontent.com/yoeduwin/SEACAP/main/logo.png');
-          if (res.ok) logo = await finalPdf.embedPng(await res.arrayBuffer());
+          let res = await fetch('logo.png').catch(() => null);
+          if (!res || !res.ok) res = await fetch('https://raw.githubusercontent.com/yoeduwin/SEACAP/main/logo.png');
+          if (res && res.ok) logo = await finalPdf.embedPng(await res.arrayBuffer());
         } catch (_) {}
 
         let cy = H - 36;
